@@ -15,7 +15,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "types": ["vite/client", "vitest/globals"],
-    "baseUrl": ".",
     "paths": {
       "shared/*": ["../shared/*"]
     }
