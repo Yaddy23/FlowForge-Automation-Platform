@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { NodeKind } from 'shared/types/workflow';
+import { getOperator } from '../conditions/operators';
 
 export type NodeCategory = 'trigger' | 'condition' | 'action' | 'logic';
 
@@ -40,15 +41,35 @@ export const nodeRegistry: Record<NodeKind, NodeSpec> = {
   condition: {
     category: 'condition',
     config: z
-      .object({ leftPath: z.string().min(1), operator: z.string().min(1) })
+      .object({
+        leftPath: z.string().min(1),
+        operator: z.string().refine((op) => !!getOperator(op), 'Unknown operator'),
+        right: z.unknown().optional(),
+      })
       .passthrough(),
   },
   branch: {
     category: 'logic',
     config: z
       .object({
+        // Validated when present; empty-config branch nodes (cycle breakers)
+        // stay legal — they route via unconditional edges.
         branches: z
-          .array(z.object({ id: z.string().min(1) }).passthrough())
+          .array(
+            z.object({
+              id: z.string().min(1),
+              combinator: z.enum(['and', 'or']),
+              conditions: z
+                .array(
+                  z.object({
+                    leftPath: z.string().min(1),
+                    operator: z.string().refine((op) => !!getOperator(op), 'Unknown operator'),
+                    right: z.unknown().optional(),
+                  })
+                )
+                .min(1),
+            })
+          )
           .optional(),
         fallbackBranchId: z.string().optional(),
       })

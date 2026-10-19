@@ -3,14 +3,18 @@ import WorkflowVersion from '../models/WorkflowVersion';
 import WorkflowRun from '../models/WorkflowRun';
 import WorkflowNodeRun from '../models/WorkflowNodeRun';
 import { getNodeSpec } from '../registry/node-registry';
-import { getActionHandler } from '../actions/registry';
+import { getActionHandler, registerAction } from '../actions/registry';
 import { registerBuiltInActions } from '../actions/log';
+import { registerConditionHandler } from './handlers/condition';
+import { registerBranchHandler } from './handlers/branch';
 import { createLogger, type RunContext } from './context';
 import { summarize } from './redact';
 import { resolveTemplatesDeep, type TemplateScope } from './template';
-import type { WorkflowDefinition, WorkflowNode } from 'shared/types/workflow';
+import type { WorkflowDefinition, WorkflowEdge, WorkflowNode } from 'shared/types/workflow';
 
 registerBuiltInActions();
+registerConditionHandler();
+registerBranchHandler();
 
 class TimeoutError extends Error {
   code = 'TIMEOUT';
@@ -129,13 +133,58 @@ async function runNode(
 
   const timedOut = lastError instanceof TimeoutError;
   const message = lastError instanceof Error ? lastError.message : String(lastError);
-  const code = lastError instanceof NodeError ? lastError.code : timedOut ? 'TIMEOUT' : 'NODE_ERROR';
+  // ConditionError/NodeError carry their own codes; other errors are generic.
+  const code =
+    timedOut && !(lastError instanceof NodeError)
+      ? 'TIMEOUT'
+      : typeof (lastError as { code?: unknown } | null)?.code === 'string'
+        ? ((lastError as { code: string }).code)
+        : 'NODE_ERROR';
   nodeRun.status = 'failed';
   nodeRun.error = { code, message };
   nodeRun.finishedAt = new Date();
   await nodeRun.save();
   ctx.logger.error(`Node ${node.id} (${node.type}) failed`, { code, message, attempts: nodeRun.attempts });
   return { status: 'failed', timedOut };
+}
+
+/**
+ * Routing (Task 9): decides which outgoing edges a node's walk follows.
+ * - `condition` node: sourceHandle 'true' follows on pass, 'false' on fail,
+ *   any other/absent handle follows unconditionally.
+ * - `branch` node: sourceHandle equal to the selected branch id (a matched
+ *   branch or the fallback) follows; other handles do not; absent handles do.
+ * - everything else follows all outgoing edges (T8 behavior).
+ */
+function selectOutgoingEdges(
+  node: WorkflowNode,
+  category: string,
+  edges: WorkflowEdge[],
+  ctx: RunContext
+): string[] {
+  const outgoing = edges.filter((e) => e.source === node.id);
+  const output = (ctx.nodeOutputs[node.id] ?? {}) as { passed?: boolean; branchId?: string | null };
+
+  if (category === 'condition') {
+    return outgoing
+      .filter((e) => {
+        if (e.sourceHandle === 'true') return output.passed === true;
+        if (e.sourceHandle === 'false') return output.passed !== true;
+        return true;
+      })
+      .map((e) => e.target);
+  }
+
+  if (category === 'logic') {
+    return outgoing
+      .filter((e) => {
+        if (e.sourceHandle === undefined || e.sourceHandle === 'out') return true;
+        return e.sourceHandle === output.branchId;
+      })
+      .map((e) => e.target);
+  }
+
+  return outgoing.map((e) => e.target);
 }
 
 /**
@@ -267,8 +316,8 @@ export async function executeRun(runId: string): Promise<void> {
       failure = failedRun?.error ?? { code: 'NODE_ERROR', message: `Node ${node.id} failed` };
       break;
     }
-    for (const edge of definition.edges) {
-      if (edge.source === node.id) queue.push(edge.target);
+    for (const edge of selectOutgoingEdges(node, category, definition.edges, ctx)) {
+      queue.push(edge);
     }
   }
 
