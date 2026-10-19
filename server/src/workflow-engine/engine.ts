@@ -1,0 +1,284 @@
+import Workflow from '../models/Workflow';
+import WorkflowVersion from '../models/WorkflowVersion';
+import WorkflowRun from '../models/WorkflowRun';
+import WorkflowNodeRun from '../models/WorkflowNodeRun';
+import { getNodeSpec } from '../registry/node-registry';
+import { getActionHandler } from '../actions/registry';
+import { registerBuiltInActions } from '../actions/log';
+import { createLogger, type RunContext } from './context';
+import { summarize } from './redact';
+import { resolveTemplatesDeep, type TemplateScope } from './template';
+import type { WorkflowDefinition, WorkflowNode } from 'shared/types/workflow';
+
+registerBuiltInActions();
+
+class TimeoutError extends Error {
+  code = 'TIMEOUT';
+  constructor(message = 'Node execution exceeded the run deadline') {
+    super(message);
+  }
+}
+
+class NodeError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function withTimeout<T>(promise: Promise<T>, remainingMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    if (remainingMs <= 0) {
+      reject(new TimeoutError());
+      return;
+    }
+    const timer = setTimeout(() => reject(new TimeoutError()), remainingMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
+/** Retry policy from node config: `retry: { attempts, backoffMs }`, attempts ≥ 1. */
+function retryPolicyOf(config: Record<string, unknown> | undefined): { attempts: number; backoffMs: number } {
+  const retry = (config ?? {}).retry as { attempts?: unknown; backoffMs?: unknown } | undefined;
+  const attempts = Math.max(1, Math.floor(Number(retry?.attempts ?? 1)) || 1);
+  const backoffMs = Math.max(0, Number(retry?.backoffMs ?? 100) || 0);
+  return { attempts, backoffMs };
+}
+
+async function executeHandler(
+  kind: string,
+  category: string,
+  config: Record<string, unknown>,
+  ctx: RunContext
+): Promise<{ output: Record<string, unknown> }> {
+  if (category === 'trigger') {
+    return { output: { payload: ctx.triggerPayload } };
+  }
+  const handler = getActionHandler(kind);
+  if (!handler) {
+    throw new NodeError('NOT_IMPLEMENTED', `No handler registered for node kind "${kind}"`);
+  }
+  return handler(config, ctx);
+}
+
+interface NodeOutcome {
+  status: 'succeeded' | 'failed';
+  timedOut: boolean;
+}
+
+/**
+ * Executes one node with its retry policy against the run deadline.
+ * Persists the WorkflowNodeRun record (attempts, summaries, error) either way.
+ */
+async function runNode(
+  node: WorkflowNode,
+  category: string,
+  scope: TemplateScope,
+  ctx: RunContext,
+  deadline: number
+): Promise<NodeOutcome> {
+  const startedAt = new Date();
+  const nodeRun = await WorkflowNodeRun.create({
+    run: ctx.run._id,
+    workflow: ctx.workflow._id,
+    nodeId: node.id,
+    kind: node.type,
+    status: 'running',
+    inputSummary: summarize({ config: node.config, payload: ctx.triggerPayload }),
+    startedAt,
+    attempts: 0,
+  });
+
+  const { attempts: maxAttempts, backoffMs } = retryPolicyOf(node.config);
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    nodeRun.attempts = attempt;
+    try {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) throw new TimeoutError();
+      // Templates resolve per attempt against the live context.
+      const config = resolveTemplatesDeep(node.config ?? {}, scope) as Record<string, unknown>;
+      const { output } = await withTimeout(executeHandler(node.type, category, config, ctx), remaining);
+      ctx.nodeOutputs[node.id] = output;
+      nodeRun.status = 'succeeded';
+      nodeRun.outputSummary = summarize(output);
+      nodeRun.finishedAt = new Date();
+      await nodeRun.save();
+      return { status: 'succeeded', timedOut: false };
+    } catch (err) {
+      lastError = err;
+      if (err instanceof TimeoutError) break; // no retry past the deadline
+      if (attempt < maxAttempts) await sleep(backoffMs * 2 ** (attempt - 1));
+    }
+  }
+
+  const timedOut = lastError instanceof TimeoutError;
+  const message = lastError instanceof Error ? lastError.message : String(lastError);
+  const code = lastError instanceof NodeError ? lastError.code : timedOut ? 'TIMEOUT' : 'NODE_ERROR';
+  nodeRun.status = 'failed';
+  nodeRun.error = { code, message };
+  nodeRun.finishedAt = new Date();
+  await nodeRun.save();
+  ctx.logger.error(`Node ${node.id} (${node.type}) failed`, { code, message, attempts: nodeRun.attempts });
+  return { status: 'failed', timedOut };
+}
+
+/**
+ * Executes a run end-to-end: loads run + workflow + version, walks the
+ * definition from its trigger node (BFS, cycle-safe), executing each node and
+ * persisting a node-run record. Failure/timeout of any node ends the run.
+ *
+ * Throws (leaving the run `queued`) when the workflow is at its concurrency
+ * limit — the queue layer retries the job with backoff.
+ */
+export async function executeRun(runId: string): Promise<void> {
+  const run = await WorkflowRun.findById(runId);
+  if (!run) throw new Error('RUN_NOT_FOUND');
+  // Only queued (and resumed `waiting`) runs execute; cancelled/finished runs are terminal.
+  if (run.status !== 'queued' && run.status !== 'waiting') return;
+
+  const concurrencyLimit = parseInt(process.env.WORKFLOW_CONCURRENCY_LIMIT ?? '5', 10) || 5;
+  const runningCount = await WorkflowRun.countDocuments({
+    workflow: run.workflow,
+    status: 'running',
+    _id: { $ne: run._id },
+  });
+  if (runningCount >= concurrencyLimit) {
+    // BullMQ job retry handles backoff; the run stays queued.
+    throw new Error('WORKFLOW_CONCURRENCY_LIMIT');
+  }
+
+  const workflow = await Workflow.findById(run.workflow);
+  if (!workflow) {
+    run.status = 'failed';
+    run.error = { code: 'WORKFLOW_NOT_FOUND', message: 'Workflow no longer exists' };
+    run.finishedAt = new Date();
+    await run.save();
+    return;
+  }
+
+  const version = await WorkflowVersion.findOne({ workflow: workflow._id, version: run.workflowVersion });
+  if (!version) {
+    run.status = 'failed';
+    run.error = { code: 'VERSION_NOT_FOUND', message: `Version ${run.workflowVersion} not found` };
+    run.finishedAt = new Date();
+    await run.save();
+    return;
+  }
+
+  const definition = version.definition as WorkflowDefinition;
+  const nodesById = new Map(definition.nodes.map((n) => [n.id, n]));
+  const triggerNode = definition.nodes.find((n) => getNodeSpec(n.type)?.category === 'trigger');
+  if (!triggerNode) {
+    run.status = 'failed';
+    run.error = { code: 'NO_TRIGGER', message: 'Definition has no trigger node' };
+    run.finishedAt = new Date();
+    await run.save();
+    return;
+  }
+
+  run.status = 'running';
+  run.startedAt = new Date();
+  await run.save();
+
+  const logger = createLogger(String(run._id));
+  const ctx: RunContext = {
+    workflow,
+    version: { version: version.version, definition },
+    run,
+    payload: run.trigger?.payload ?? {},
+    triggerPayload: run.trigger?.payload ?? {},
+    vars: {},
+    nodeOutputs: {},
+    logger,
+  };
+  const scope: TemplateScope = {
+    payload: ctx.payload,
+    get vars() {
+      return ctx.vars;
+    },
+    get outputs() {
+      return ctx.nodeOutputs;
+    },
+  };
+
+  const timeoutMs = run.timeoutMs ?? (parseInt(process.env.RUN_TIMEOUT_MS ?? '300000', 10) || 300000);
+  const deadline = Date.now() + timeoutMs;
+
+  // BFS walk from the trigger, cycle-safe via visited set (the validator
+  // permits cycles that pass through branch nodes — Task 9 routes them).
+  const queue: string[] = [triggerNode.id];
+  const visited = new Set<string>();
+  let failure: { code: string; message: string } | null = null;
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift() as string;
+    if (visited.has(nodeId)) continue;
+    visited.add(nodeId);
+
+    const node = nodesById.get(nodeId);
+    if (!node) {
+      failure = { code: 'UNKNOWN_NODE', message: `Node "${nodeId}" is not in the definition` };
+      break;
+    }
+
+    const spec = getNodeSpec(node.type);
+    // A kind outside the static registry is still executable when an action
+    // handler is registered for it; only unknown-and-unhandled kinds fail.
+    const category = spec?.category ?? (getActionHandler(node.type) ? 'action' : undefined);
+    if (!category) {
+      await WorkflowNodeRun.create({
+        run: run._id,
+        workflow: workflow._id,
+        nodeId: node.id,
+        kind: node.type,
+        status: 'failed',
+        error: { code: 'UNKNOWN_NODE', message: `Unknown node type "${node.type}"` },
+        attempts: 0,
+        startedAt: new Date(),
+        finishedAt: new Date(),
+      });
+      failure = { code: 'UNKNOWN_NODE', message: `Unknown node type "${node.type}"` };
+      break;
+    }
+
+    const outcome = await runNode(node, category, scope, ctx, deadline);
+    if (outcome.timedOut) {
+      failure = { code: 'TIMEOUT', message: 'Run exceeded its time limit' };
+      break;
+    }
+    if (outcome.status === 'failed') {
+      const failedRun = await WorkflowNodeRun.findOne({ run: run._id, nodeId: node.id });
+      failure = failedRun?.error ?? { code: 'NODE_ERROR', message: `Node ${node.id} failed` };
+      break;
+    }
+    for (const edge of definition.edges) {
+      if (edge.source === node.id) queue.push(edge.target);
+    }
+  }
+
+  run.finishedAt = new Date();
+  if (failure) {
+    run.status = failure.code === 'TIMEOUT' ? 'timed_out' : 'failed';
+    run.error = failure;
+  } else {
+    run.status = 'succeeded';
+    run.error = null;
+  }
+  await run.save();
+}

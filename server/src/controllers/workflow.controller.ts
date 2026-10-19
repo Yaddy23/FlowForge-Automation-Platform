@@ -1,8 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import { randomUUID } from 'node:crypto';
 import Workflow, { IWorkflow } from '../models/Workflow';
 import WorkflowVersion from '../models/WorkflowVersion';
+import WorkflowRun from '../models/WorkflowRun';
 import { validateDefinition } from '../services/workflow-validator.service';
+import { enqueueRun } from '../queues';
+import { logAudit } from '../services/audit.service';
 import type { WorkflowDefinition } from 'shared/types/workflow';
 import type { Role } from '../models/User';
 
@@ -253,6 +257,44 @@ export const pause = async (req: Request, res: Response, next: NextFunction) => 
     workflow.status = 'draft';
     await workflow.save();
     res.json({ workflow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @route POST /api/workflows/:id/execute
+ * @desc Manual trigger: create a queued run and enqueue it (owner or admin+)
+ */
+export const execute = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const workflow = await Workflow.findById(req.params.id);
+    if (!workflow) return res.status(404).json({ error: 'Workflow not found' });
+    if (!canManage(workflow, req.user!.id, req.user!.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    if (workflow.status !== 'active' || workflow.activeVersion == null) {
+      return res.status(409).json({ error: 'Workflow is not active' });
+    }
+
+    const { payload } = (req.body ?? {}) as { payload?: unknown };
+    const run = new WorkflowRun({
+      workflow: workflow._id,
+      workflowVersion: workflow.activeVersion,
+      status: 'queued',
+      trigger: { type: 'manual', payload: payload ?? {} },
+      idempotencyKey: randomUUID(),
+      createdBy: req.user!.id,
+    });
+    await run.save();
+
+    await logAudit(req.user!.id, 'EXECUTE_WORKFLOW', 'Workflow', workflow._id, {
+      runId: String(run._id),
+    });
+    // Without Redis this is a no-op and the run stays queued (worker picks it up).
+    await enqueueRun(String(run._id));
+
+    res.status(202).json({ run });
   } catch (error) {
     next(error);
   }

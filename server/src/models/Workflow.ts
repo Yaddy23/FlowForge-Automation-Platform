@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 
 export interface IWorkflow {
+  _id: mongoose.Types.ObjectId;
   name: string;
   description?: string;
   owner: mongoose.Types.ObjectId;

@@ -15,7 +15,7 @@ const workflowVersionSchema = new Schema<IWorkflowVersion>(
     definition: { type: Schema.Types.Mixed, required: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
-  { timestamps: { createdAt: true, updatedAt: false } }
+  { timestamps: { createdAt: true, updatedAt: false }, minimize: false }
 );
 
 // Immutable versions: (workflow, version) is unique

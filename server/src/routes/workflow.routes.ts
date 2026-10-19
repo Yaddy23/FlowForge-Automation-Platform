@@ -10,6 +10,7 @@ import {
   listVersions,
   activate,
   pause,
+  execute,
   MUTATE_ROLES,
   ACTIVATE_ROLES,
 } from '../controllers/workflow.controller';
@@ -25,5 +26,6 @@ router.post('/:id/versions', requireAuth, requireRole(...MUTATE_ROLES), saveVers
 router.get('/:id/versions', requireAuth, listVersions);
 router.post('/:id/activate', requireAuth, requireRole(...ACTIVATE_ROLES), activate);
 router.post('/:id/pause', requireAuth, requireRole(...ACTIVATE_ROLES), pause);
+router.post('/:id/execute', requireAuth, requireRole(...MUTATE_ROLES), execute);
 
 export default router;
