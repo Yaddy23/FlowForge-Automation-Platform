@@ -29,8 +29,8 @@
 - [x] **T11.** Execution history API + UI: filters, node timeline, retry failed, cancel running, log download.
 
 ## Phase 5 — Versioning & templates
-- [ ] **T12.** Version diff + restore.
-- [ ] **T13.** Built-in templates A–E (critical ticket alert, weekly report, warranty reminder, low inventory, CSV validation) — all must validate clean.
+- [x] **T12.** Version diff + restore.
+- [x] **T13.** Built-in templates A–E (critical ticket alert, weekly report, warranty reminder, low inventory, CSV validation) — all must validate clean.
 
 ## Phase 6 — Triggers
 - [ ] **T14.** Schedule trigger (once/hourly/daily/weekly/monthly/cron + timezones) + internal event bus with idempotent fan-out.
