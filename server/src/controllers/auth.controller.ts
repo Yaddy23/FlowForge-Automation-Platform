@@ -17,8 +17,8 @@ const loginSchema = z.object({
 });
 
 // JWT settings
-const JWT_ACCESS_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production'; // In production, use separate secret
+const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
+const JWT_REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
 const JWT_ACCESS_EXPIRES_IN = '15m';
 const JWT_REFRESH_EXPIRES_IN = '7d';
 

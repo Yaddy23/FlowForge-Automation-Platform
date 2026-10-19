@@ -15,8 +15,8 @@ declare global {
   }
 }
 
-// JWT secret (same as used in auth.controller)
-const JWT_ACCESS_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
+// JWT secret for access token (same as used in auth.controller)
+const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
 
 /**
  * Middleware to verify JWT access token and attach user to request
@@ -58,7 +58,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
  * Middleware to check if user has one of the allowed roles
  * @param roles - Array of allowed roles
  */
-export const requireRole = (...roles: string[]) => {
+export const requireRole = (...roles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
