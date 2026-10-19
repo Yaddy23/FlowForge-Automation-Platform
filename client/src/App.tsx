@@ -4,7 +4,6 @@ import {
   Bell,
   CalendarClock,
   FileStack,
-  GitBranch,
   KeyRound,
   PlayCircle,
   Plug,
@@ -14,11 +13,14 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { AuthProvider } from './lib/auth-context';
+import { ToastProvider } from './components/ui/toast';
 import AppLayout from './components/layout/AppLayout';
 import { RequireAuth } from './components/RequireAuth';
 import { RequireRole } from './components/RequireRole';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import WorkflowsListPage from './pages/WorkflowsListPage';
+import EditorPage from './workflow-editor/EditorPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 
 const queryClient = new QueryClient({
@@ -43,8 +45,8 @@ export function AppRoutes() {
         }
       >
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/workflows" element={<PlaceholderPage icon={GitBranch} title="Workflows" description="Your workflows will be listed here. Create one from scratch or start from a template." />} />
-        <Route path="/workflows/builder/:id" element={<PlaceholderPage icon={GitBranch} title="Workflow Builder" description="The visual editor opens here. Task 7 brings the palette, canvas, and config panel." />} />
+        <Route path="/workflows" element={<WorkflowsListPage />} />
+        <Route path="/workflows/builder/:id" element={<EditorPage />} />
         <Route path="/workflows/:id/executions" element={<PlaceholderPage icon={PlayCircle} title="Workflow Executions" description="Execution history for this workflow will appear here." />} />
         <Route path="/executions" element={<PlaceholderPage icon={PlayCircle} title="Executions" description="All workflow executions, with filters and drill-down, land here." />} />
         <Route path="/executions/:id" element={<PlaceholderPage icon={PlayCircle} title="Execution Detail" description="Node timeline, inputs/outputs, and logs for a single execution." />} />
@@ -80,11 +82,13 @@ export function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </QueryClientProvider>
+      <ToastProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

@@ -199,9 +199,8 @@ export const listVersions = async (req: Request, res: Response, next: NextFuncti
   try {
     const workflow = await Workflow.findById(req.params.id);
     if (!workflow) return res.status(404).json({ error: 'Workflow not found' });
-    const versions = await WorkflowVersion.find({ workflow: workflow._id })
-      .sort({ version: -1 })
-      .select('version createdBy createdAt');
+    // Includes each version's definition so the editor can load the latest one.
+    const versions = await WorkflowVersion.find({ workflow: workflow._id }).sort({ version: -1 });
     res.json({ data: versions });
   } catch (error) {
     next(error);
