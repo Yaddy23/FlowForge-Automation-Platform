@@ -56,17 +56,19 @@ export function getEventsQueue(): Queue | null {
 }
 
 /**
- * Enqueues a run for execution. No-op (warning) without Redis — the run doc
- * remains `queued` and is picked up by any later worker.
+ * Enqueues a run for execution. `opts.delayMs` schedules a delayed
+ * continuation (action.delay resume). No-op (warning) without Redis — the run
+ * doc remains `queued`/`waiting` and is picked up by any later worker.
  */
-export async function enqueueRun(runId: string): Promise<void> {
+export async function enqueueRun(runId: string, opts?: { delayMs?: number }): Promise<void> {
   const queue = getRunQueue();
   if (!queue) return;
   await queue.add(
     'run',
     { runId },
     {
-      jobId: `run:${runId}`,
+      jobId: opts?.delayMs ? `run:${runId}:${Date.now()}` : `run:${runId}`,
+      delay: opts?.delayMs,
       attempts: 5,
       backoff: { type: 'exponential', delay: 2000 },
       removeOnComplete: { count: 1000 },

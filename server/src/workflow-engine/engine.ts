@@ -3,8 +3,9 @@ import WorkflowVersion from '../models/WorkflowVersion';
 import WorkflowRun from '../models/WorkflowRun';
 import WorkflowNodeRun from '../models/WorkflowNodeRun';
 import { getNodeSpec } from '../registry/node-registry';
-import { getActionHandler, registerAction } from '../actions/registry';
-import { registerBuiltInActions } from '../actions/log';
+import { getActionHandler } from '../actions/registry';
+import { registerAllActions } from '../actions';
+import { enqueueRun } from '../queues';
 import { registerConditionHandler } from './handlers/condition';
 import { registerBranchHandler } from './handlers/branch';
 import { createLogger, type RunContext } from './context';
@@ -12,7 +13,7 @@ import { summarize } from './redact';
 import { resolveTemplatesDeep, type TemplateScope } from './template';
 import type { WorkflowDefinition, WorkflowEdge, WorkflowNode } from 'shared/types/workflow';
 
-registerBuiltInActions();
+registerAllActions();
 registerConditionHandler();
 registerBranchHandler();
 
@@ -82,6 +83,8 @@ async function executeHandler(
 interface NodeOutcome {
   status: 'succeeded' | 'failed';
   timedOut: boolean;
+  /** Set when the node paused the run (action.delay): resume after this many ms. */
+  delayMs?: number;
 }
 
 /**
@@ -123,7 +126,13 @@ async function runNode(
       nodeRun.outputSummary = summarize(output);
       nodeRun.finishedAt = new Date();
       await nodeRun.save();
-      return { status: 'succeeded', timedOut: false };
+      // action.delay marker: the run pauses here and resumes via a delayed job.
+      const delayedForMs = (output as { delayedForMs?: unknown }).delayedForMs;
+      const delayMs =
+        typeof delayedForMs === 'number' && Number.isFinite(delayedForMs) && delayedForMs > 0
+          ? Math.floor(delayedForMs)
+          : undefined;
+      return { status: 'succeeded', timedOut: false, ...(delayMs ? { delayMs } : {}) };
     } catch (err) {
       lastError = err;
       if (err instanceof TimeoutError) break; // no retry past the deadline
@@ -241,8 +250,9 @@ export async function executeRun(runId: string): Promise<void> {
     return;
   }
 
+  const isResuming = run.status === 'waiting';
   run.status = 'running';
-  run.startedAt = new Date();
+  if (!run.startedAt) run.startedAt = new Date();
   await run.save();
 
   const logger = createLogger(String(run._id));
@@ -253,7 +263,7 @@ export async function executeRun(runId: string): Promise<void> {
     payload: run.trigger?.payload ?? {},
     triggerPayload: run.trigger?.payload ?? {},
     vars: {},
-    nodeOutputs: {},
+    nodeOutputs: isResuming ? { ...(run.nodeOutputs ?? {}) } : {},
     logger,
   };
   const scope: TemplateScope = {
@@ -274,6 +284,29 @@ export async function executeRun(runId: string): Promise<void> {
   const queue: string[] = [triggerNode.id];
   const visited = new Set<string>();
   let failure: { code: string; message: string } | null = null;
+  let delayed: { delayMs: number } | null = null;
+
+  if (isResuming) {
+    // action.delay resume: previously succeeded nodes are NOT re-executed —
+    // they are marked visited and their outgoing edges re-routed from the
+    // restored outputs, so the walk continues where it paused.
+    const completed = await WorkflowNodeRun.find({ run: run._id, status: 'succeeded' })
+      .select('nodeId')
+      .lean();
+    for (const completedRun of completed) {
+      const completedId = String(completedRun.nodeId);
+      visited.add(completedId);
+      const completedNode = nodesById.get(completedId);
+      if (!completedNode) continue;
+      const completedSpec = getNodeSpec(completedNode.type);
+      const completedCategory =
+        completedSpec?.category ?? (getActionHandler(completedNode.type) ? 'action' : undefined);
+      if (!completedCategory) continue;
+      for (const target of selectOutgoingEdges(completedNode, completedCategory, definition.edges, ctx)) {
+        queue.push(target);
+      }
+    }
+  }
 
   while (queue.length > 0) {
     const nodeId = queue.shift() as string;
@@ -307,6 +340,10 @@ export async function executeRun(runId: string): Promise<void> {
     }
 
     const outcome = await runNode(node, category, scope, ctx, deadline);
+    if (outcome.delayMs) {
+      delayed = { delayMs: outcome.delayMs };
+      break;
+    }
     if (outcome.timedOut) {
       failure = { code: 'TIMEOUT', message: 'Run exceeded its time limit' };
       break;
@@ -319,6 +356,16 @@ export async function executeRun(runId: string): Promise<void> {
     for (const edge of selectOutgoingEdges(node, category, definition.edges, ctx)) {
       queue.push(edge);
     }
+  }
+
+  if (delayed) {
+    // Paused by action.delay: persist the outputs for the resume pass and
+    // schedule the continuation job. The run is not finished — no finishedAt.
+    run.status = 'waiting';
+    run.nodeOutputs = ctx.nodeOutputs;
+    await run.save();
+    await enqueueRun(String(run._id), { delayMs: delayed.delayMs });
+    return;
   }
 
   run.finishedAt = new Date();

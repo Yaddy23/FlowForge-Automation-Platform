@@ -97,17 +97,69 @@ export const nodeRegistry: Record<NodeKind, NodeSpec> = {
       .object({ url: z.string().url(), method: z.enum(['GET', 'POST', 'PUT', 'PATCH']).optional() })
       .passthrough(),
   },
-  'action.transform': { category: 'action', config: z.object({}).passthrough() },
-  'action.filter': { category: 'action', config: z.object({}).passthrough() },
-  'action.validate': { category: 'action', config: z.object({}).passthrough() },
-  'action.report': { category: 'action', config: z.object({}).passthrough() },
-  'action.csv': { category: 'action', config: z.object({}).passthrough() },
+  'action.transform': {
+    category: 'action',
+    config: z.object({ mappings: z.record(z.unknown()) }).passthrough(),
+  },
+  'action.filter': {
+    category: 'action',
+    config: z
+      .object({
+        inputPath: z.string().min(1),
+        path: z.string().optional(),
+        operator: z.string().refine((op) => !!getOperator(op), 'Unknown operator'),
+        value: z.unknown().optional(),
+      })
+      .passthrough(),
+  },
+  'action.validate': {
+    category: 'action',
+    config: z
+      .object({
+        schema: z.record(z.unknown()),
+        data: z.unknown().optional(),
+        inputPath: z.string().optional(),
+      })
+      .passthrough(),
+  },
+  'action.map-fields': {
+    category: 'action',
+    config: z
+      .object({
+        inputPath: z.string().optional(),
+        mapping: z.record(z.string()),
+      })
+      .passthrough(),
+  },
+  'action.format-date': {
+    category: 'action',
+    config: z
+      .object({
+        value: z.string().min(1),
+        format: z.string().optional(),
+        timezone: z.string().optional(),
+      })
+      .passthrough(),
+  },
+  'action.report': { category: 'action', config: z.object({ title: z.string().optional() }).passthrough() },
+  'action.csv': {
+    category: 'action',
+    config: z
+      .object({
+        operation: z.enum(['parse', 'generate']),
+        data: z.string().optional(),
+        inputPath: z.string().optional(),
+      })
+      .passthrough(),
+  },
   'action.delay': {
     category: 'action',
-    config: z.object({ durationMs: z.number().int().positive() }).passthrough(),
+    config: z
+      .object({ durationMs: z.number().int().positive().max(2_147_483_647) })
+      .passthrough(),
   },
   'action.log': { category: 'action', config: z.object({}).passthrough() },
-  'action.reference': { category: 'action', config: z.object({}).passthrough() },
+  'action.reference': { category: 'action', config: z.object({ prefix: z.string().optional() }).passthrough() },
   'action.record.create': {
     category: 'action',
     config: z

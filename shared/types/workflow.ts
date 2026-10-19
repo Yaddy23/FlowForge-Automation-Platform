@@ -11,6 +11,8 @@ export type NodeKind =
   | 'action.transform'
   | 'action.filter'
   | 'action.validate'
+  | 'action.map-fields'
+  | 'action.format-date'
   | 'action.report'
   | 'action.csv'
   | 'action.delay'
