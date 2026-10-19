@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import Workflow, { IWorkflow } from '../models/Workflow';
 import WorkflowVersion from '../models/WorkflowVersion';
+import { validateDefinition } from '../services/workflow-validator.service';
 import type { WorkflowDefinition } from 'shared/types/workflow';
 import type { Role } from '../models/User';
 
@@ -18,26 +19,11 @@ function canManage(workflow: IWorkflow, userId: string, role: string): boolean {
 }
 
 /**
- * Basic structural validation (pre-Task-5 placeholder; Task 5's
- * validateDefinition will replace this with full registry-based checks).
- * Rules: exactly one trigger.* node; every edge connects existing nodes.
+ * Full registry-based validation (Task 5). Draft saves include the result as
+ * warnings (drafts may be invalid); activation hard-fails on any error.
  */
-function validateBasicDefinition(def: WorkflowDefinition): string[] {
-  const errors: string[] = [];
-  if (!def || !Array.isArray(def.nodes) || !Array.isArray(def.edges)) {
-    return ['Definition must contain nodes and edges arrays'];
-  }
-  const triggers = def.nodes.filter((n) => typeof n.type === 'string' && n.type.startsWith('trigger.'));
-  if (triggers.length !== 1) {
-    errors.push(`Definition must have exactly one trigger node (found ${triggers.length})`);
-  }
-  const nodeIds = new Set(def.nodes.map((n) => n.id));
-  for (const edge of def.edges) {
-    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
-      errors.push(`Edge ${edge.id} connects nonexistent nodes`);
-    }
-  }
-  return errors;
+function validateForDraft(def: WorkflowDefinition) {
+  return validateDefinition(def);
 }
 
 /**
@@ -186,7 +172,8 @@ export const saveVersion = async (req: Request, res: Response, next: NextFunctio
     const { definition } = req.body as { definition?: WorkflowDefinition };
     if (!definition) return res.status(400).json({ error: 'Definition is required' });
 
-    // Draft versions accept any definition (validation gates activation only — Task 5 wires full validateDefinition here as warnings)
+    const validation = validateForDraft(definition);
+
     const version = new WorkflowVersion({
       workflow: workflow._id,
       version: workflow.latestVersion + 1,
@@ -198,7 +185,7 @@ export const saveVersion = async (req: Request, res: Response, next: NextFunctio
     workflow.latestVersion = version.version;
     await workflow.save();
 
-    res.status(201).json({ version });
+    res.status(201).json({ version, warnings: validation.valid ? [] : validation.errors });
   } catch (error) {
     next(error);
   }
@@ -238,9 +225,9 @@ export const activate = async (req: Request, res: Response, next: NextFunction) 
       return res.status(404).json({ error: 'Version not found for this workflow' });
     }
 
-    const errors = validateBasicDefinition(version.definition as WorkflowDefinition);
-    if (errors.length > 0) {
-      return res.status(422).json({ error: 'Validation failed', errors });
+    const validation = validateDefinition(version.definition as WorkflowDefinition);
+    if (!validation.valid) {
+      return res.status(422).json({ error: 'Validation failed', errors: validation.errors });
     }
 
     workflow.status = 'active';
