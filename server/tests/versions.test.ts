@@ -70,7 +70,9 @@ describe('Version diff and restore API', () => {
 
   it('activate v1, edit to v2, diff shows change', async () => {
     // Activate version 1
-    const v1VersionId = (await WorkflowVersion.findOne({ workflow: workflowId, version: 1 }))._id;
+    const v1Version = await WorkflowVersion.findOne({ workflow: workflowId, version: 1 });
+    expect(v1Version).not.toBeNull();
+    const v1VersionId = v1Version._id;
     const actRes = await request(app)
       .post(`/api/workflows/${workflowId}/activate`)
       .set('Authorization', `Bearer ${adminToken}`)
@@ -117,7 +119,7 @@ describe('Version diff and restore API', () => {
 
     // Fetch definition of version 3 and compare to v1Def
     const v3 = await WorkflowVersion.findOne({ workflow: workflowId, version: 3 });
-    expect(v3).toBeDefined();
+    expect(v3).not.toBeNull();
     // The definition should equal v1Def (deep equal)
     expect(v3.definition).toEqual(v1Def);
   });
