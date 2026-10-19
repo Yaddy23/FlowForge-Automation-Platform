@@ -5,7 +5,6 @@ import {
   CalendarClock,
   FileStack,
   KeyRound,
-  PlayCircle,
   Plug,
   ScrollText,
   Settings,
@@ -20,6 +19,8 @@ import { RequireRole } from './components/RequireRole';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import WorkflowsListPage from './pages/WorkflowsListPage';
+import ExecutionsListPage from './pages/ExecutionsListPage';
+import ExecutionDetailPage from './pages/ExecutionDetailPage';
 import EditorPage from './workflow-editor/EditorPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 
@@ -47,9 +48,9 @@ export function AppRoutes() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/workflows" element={<WorkflowsListPage />} />
         <Route path="/workflows/builder/:id" element={<EditorPage />} />
-        <Route path="/workflows/:id/executions" element={<PlaceholderPage icon={PlayCircle} title="Workflow Executions" description="Execution history for this workflow will appear here." />} />
-        <Route path="/executions" element={<PlaceholderPage icon={PlayCircle} title="Executions" description="All workflow executions, with filters and drill-down, land here." />} />
-        <Route path="/executions/:id" element={<PlaceholderPage icon={PlayCircle} title="Execution Detail" description="Node timeline, inputs/outputs, and logs for a single execution." />} />
+        <Route path="/workflows/:id/executions" element={<ExecutionsListPage />} />
+        <Route path="/executions" element={<ExecutionsListPage />} />
+        <Route path="/executions/:id" element={<ExecutionDetailPage />} />
         <Route path="/templates" element={<PlaceholderPage icon={FileStack} title="Templates" description="Ready-made workflow templates you can instantiate and customize." />} />
         <Route path="/scheduled" element={<PlaceholderPage icon={CalendarClock} title="Scheduled Runs" description="Upcoming scheduled executions across all workflows." />} />
         <Route path="/integrations" element={<PlaceholderPage icon={Plug} title="Integrations" description="Connect external services like email providers and help-desk systems." />} />

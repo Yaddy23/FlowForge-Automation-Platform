@@ -89,3 +89,14 @@ export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
 export function apiDelete<T>(path: string): Promise<T> {
   return request<T>('DELETE', path);
 }
+
+/** Fetches a raw file (e.g. NDJSON log download) with the current access token. */
+export async function apiDownload(path: string): Promise<Blob> {
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { Authorization: `Bearer ${getAuthState()?.accessToken ?? ''}` },
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `Download failed (${res.status})`);
+  }
+  return res.blob();
+}

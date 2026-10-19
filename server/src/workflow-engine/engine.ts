@@ -11,6 +11,7 @@ import { registerBranchHandler } from './handlers/branch';
 import { createLogger, type RunContext } from './context';
 import { summarize } from './redact';
 import { resolveTemplatesDeep, type TemplateScope } from './template';
+import RunLog from '../models/RunLog';
 import type { WorkflowDefinition, WorkflowEdge, WorkflowNode } from 'shared/types/workflow';
 
 registerAllActions();
@@ -250,12 +251,13 @@ export async function executeRun(runId: string): Promise<void> {
     return;
   }
 
-  const isResuming = run.status === 'waiting';
   run.status = 'running';
   if (!run.startedAt) run.startedAt = new Date();
   await run.save();
 
   const logger = createLogger(String(run._id));
+  // Restored when present: delay-resume and retry both continue an earlier
+  // walk — fresh runs simply restore an empty object.
   const ctx: RunContext = {
     workflow,
     version: { version: version.version, definition },
@@ -263,7 +265,7 @@ export async function executeRun(runId: string): Promise<void> {
     payload: run.trigger?.payload ?? {},
     triggerPayload: run.trigger?.payload ?? {},
     vars: {},
-    nodeOutputs: isResuming ? { ...(run.nodeOutputs ?? {}) } : {},
+    nodeOutputs: { ...(run.nodeOutputs ?? {}) },
     logger,
   };
   const scope: TemplateScope = {
@@ -286,29 +288,35 @@ export async function executeRun(runId: string): Promise<void> {
   let failure: { code: string; message: string } | null = null;
   let delayed: { delayMs: number } | null = null;
 
-  if (isResuming) {
-    // action.delay resume: previously succeeded nodes are NOT re-executed —
-    // they are marked visited and their outgoing edges re-routed from the
-    // restored outputs, so the walk continues where it paused.
-    const completed = await WorkflowNodeRun.find({ run: run._id, status: 'succeeded' })
-      .select('nodeId')
-      .lean();
-    for (const completedRun of completed) {
-      const completedId = String(completedRun.nodeId);
-      visited.add(completedId);
-      const completedNode = nodesById.get(completedId);
-      if (!completedNode) continue;
-      const completedSpec = getNodeSpec(completedNode.type);
-      const completedCategory =
-        completedSpec?.category ?? (getActionHandler(completedNode.type) ? 'action' : undefined);
-      if (!completedCategory) continue;
-      for (const target of selectOutgoingEdges(completedNode, completedCategory, definition.edges, ctx)) {
-        queue.push(target);
-      }
+  // A cancelled run aborts the walk; the cancel API owns the status/finishedAt
+  // write, so detection here simply returns without saving.
+  const isCancelled = async (): Promise<boolean> => {
+    const fresh = await WorkflowRun.findById(run._id).select('status').lean();
+    return fresh?.status === 'cancelled';
+  };
+
+  // Previously succeeded nodes are NOT re-executed (delay-resume and retry
+  // both continue an earlier walk): they are marked visited and their
+  // outgoing edges re-routed from the restored outputs.
+  const completed = await WorkflowNodeRun.find({ run: run._id, status: 'succeeded' })
+    .select('nodeId')
+    .lean();
+  for (const completedRun of completed) {
+    const completedId = String(completedRun.nodeId);
+    visited.add(completedId);
+    const completedNode = nodesById.get(completedId);
+    if (!completedNode) continue;
+    const completedSpec = getNodeSpec(completedNode.type);
+    const completedCategory =
+      completedSpec?.category ?? (getActionHandler(completedNode.type) ? 'action' : undefined);
+    if (!completedCategory) continue;
+    for (const target of selectOutgoingEdges(completedNode, completedCategory, definition.edges, ctx)) {
+      queue.push(target);
     }
   }
 
   while (queue.length > 0) {
+    if (await isCancelled()) return;
     const nodeId = queue.shift() as string;
     if (visited.has(nodeId)) continue;
     visited.add(nodeId);
@@ -359,22 +367,36 @@ export async function executeRun(runId: string): Promise<void> {
   }
 
   if (delayed) {
+    if (await isCancelled()) return;
     // Paused by action.delay: persist the outputs for the resume pass and
     // schedule the continuation job. The run is not finished — no finishedAt.
     run.status = 'waiting';
     run.nodeOutputs = ctx.nodeOutputs;
     await run.save();
     await enqueueRun(String(run._id), { delayMs: delayed.delayMs });
+    await persistRunLog(String(run._id), logger);
     return;
   }
+
+  if (await isCancelled()) return;
 
   run.finishedAt = new Date();
   if (failure) {
     run.status = failure.code === 'TIMEOUT' ? 'timed_out' : 'failed';
     run.error = failure;
+    // Persist outputs so a retry restores upstream context without re-running
+    // the succeeded prefix.
+    run.nodeOutputs = ctx.nodeOutputs;
   } else {
     run.status = 'succeeded';
     run.error = null;
   }
   await run.save();
+  await persistRunLog(String(run._id), logger);
+}
+
+/** Appends this pass's redacted log lines to the run's NDJSON log (Task 11). */
+async function persistRunLog(runId: string, logger: ReturnType<typeof createLogger>): Promise<void> {
+  if (logger.lines.length === 0) return;
+  await RunLog.findOneAndUpdate({ run: runId }, { $push: { lines: { $each: logger.lines } } }, { upsert: true });
 }

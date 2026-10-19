@@ -4,6 +4,7 @@ import authRoutes from './routes/auth.routes';
 import { requireAuth, requireRole } from './middleware/auth';
 import openapiRoutes from './docs/openapi';
 import workflowRoutes from './routes/workflow.routes';
+import runsRoutes from './routes/runs.routes';
 // Import other routes here as they are created
 
 // Load environment variables
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/docs', openapiRoutes);
 app.use('/api/workflows', workflowRoutes);
+app.use('/api/runs', runsRoutes);
 // Mount other routers under /api as needed
 
 // Test routes (only in test environment)
