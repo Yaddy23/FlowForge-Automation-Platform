@@ -10,16 +10,16 @@
 ---
 
 ## Phase 1 — Foundation (auth, RBAC, scaffold)
-- [ ] **T1.** Monorepo scaffold: npm workspaces (`client/`, `server/`, `shared/`), Docker Compose (Mongo 7, Redis 7), `.env.example` files.
-- [ ] **T2.** Users, JWT access/refresh auth, bcrypt, 4 roles (super_admin, workflow_admin, workflow_builder, viewer), `requireAuth`/`requireRole` middleware, audit-log service.
-- [ ] **T3.** Seed demo accounts (4 roles) + Swagger UI at `/api/docs`.
+- [x] **T1.** Monorepo scaffold: npm workspaces (`client/`, `server/`, `shared/`), Docker Compose (Mongo 7, Redis 7), `.env.example` files.
+- [x] **T2.** Users, JWT access/refresh auth, bcrypt, 4 roles (super_admin, workflow_admin, workflow_builder, viewer), `requireAuth`/`requireRole` middleware, audit-log service.
+- [x] **T3.** Seed demo accounts (4 roles) + Swagger UI at `/api/docs`.
 
 ## Phase 2 — Workflow storage & validation
-- [ ] **T4.** Workflow / WorkflowVersion models + CRUD API with ownership scoping, immutable versions, activation (admin-gated).
-- [ ] **T5.** Definition validator: one trigger, per-node Zod config registry, edge/cycle checks (cycles allowed only via branch nodes), reachability.
+- [x] **T4.** Workflow / WorkflowVersion models + CRUD API with ownership scoping, immutable versions, activation (admin-gated).
+- [x] **T5.** Definition validator: one trigger, per-node Zod config registry, edge/cycle checks (cycles allowed only via branch nodes), reachability.
 
 ## Phase 3 — Visual editor (frontend)
-- [ ] **T6.** App shell: collapsible sidebar (13 items), topbar, theme switcher, login flow, RBAC-aware routes, API client with token refresh.
+- [x] **T6.** App shell: collapsible sidebar (13 items), topbar, theme switcher, login flow, RBAC-aware routes, API client with token refresh.
 - [ ] **T7.** React Flow editor: node palette, config panel per node kind, connect/save drafts, undo/redo, client-side validation; Workflows list page.
 
 ## Phase 4 — Execution engine
