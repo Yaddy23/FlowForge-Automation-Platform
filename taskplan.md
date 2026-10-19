@@ -23,7 +23,7 @@
 - [x] **T7.** React Flow editor: node palette, config panel per node kind, connect/save drafts, undo/redo, client-side validation; Workflows list page.
 
 ## Phase 4 — Execution engine
-- [ ] **T8.** Engine core: run/node-run records, topological execution, BullMQ queue, retries with backoff, timeouts, 7 run states, secret redaction, safe `{{field}}` template resolver (no eval).
+- [x] **T8.** Engine core: run/node-run records, topological execution, BullMQ queue, retries with backoff, timeouts, 7 run states, secret redaction, safe `{{field}}` template resolver (no eval).
 - [ ] **T9.** Condition operators (equals, gt, contains, is_empty, date/boolean, …) + AND/OR if/else branching.
 - [ ] **T10.** Action library: email, in-app notify, outbound webhook (SSRF-guarded), JSON transform/filter/validate, map-fields, delay, log, format-date, generate-reference, record create/update (whitelisted collections).
 - [ ] **T11.** Execution history API + UI: filters, node timeline, retry failed, cancel running, log download.
