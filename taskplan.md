@@ -20,7 +20,7 @@
 
 ## Phase 3 — Visual editor (frontend)
 - [x] **T6.** App shell: collapsible sidebar (13 items), topbar, theme switcher, login flow, RBAC-aware routes, API client with token refresh.
-- [ ] **T7.** React Flow editor: node palette, config panel per node kind, connect/save drafts, undo/redo, client-side validation; Workflows list page.
+- [x] **T7.** React Flow editor: node palette, config panel per node kind, connect/save drafts, undo/redo, client-side validation; Workflows list page.
 
 ## Phase 4 — Execution engine
 - [ ] **T8.** Engine core: run/node-run records, topological execution, BullMQ queue, retries with backoff, timeouts, 7 run states, secret redaction, safe `{{field}}` template resolver (no eval).
