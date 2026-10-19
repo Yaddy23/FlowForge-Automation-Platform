@@ -19,3 +19,24 @@ Copy the example environment files:
 - `cp client/.env.example client/.env`
 
 Then modify the values as needed for your environment.
+
+## Demo Accounts
+
+Seed the demo accounts (requires a reachable MongoDB via `MONGODB_URI`):
+
+```
+npm run seed -w server
+```
+
+| Email | Role |
+|---|---|
+| admin@flowforge.dev | super_admin |
+| wfadmin@flowforge.dev | workflow_admin |
+| builder@flowforge.dev | workflow_builder |
+| viewer@flowforge.dev | viewer |
+
+All demo accounts use the password: `Demo123!`
+
+## API Docs
+
+With the server running, Swagger UI is available at http://localhost:3001/api/docs

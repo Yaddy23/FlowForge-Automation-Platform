@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import { requireAuth, requireRole } from './middleware/auth';
+import openapiRoutes from './docs/openapi';
 // Import other routes here as they are created
 
 // Load environment variables
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/docs', openapiRoutes);
 // Mount other routers under /api as needed
 
 // Test routes (only in test environment)
