@@ -6,6 +6,8 @@ import openapiRoutes from './docs/openapi';
 import workflowRoutes from './routes/workflow.routes';
 import runsRoutes from './routes/runs.routes';
 import templateRoutes from './routes/templates.routes';
+import scheduleRoutes from './routes/schedules.routes';
+import eventsRoutes from './routes/events.routes';
 // Import other routes here as they are created
 
 // Load environment variables
@@ -22,6 +24,8 @@ app.use('/api/docs', openapiRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/runs', runsRoutes);
 app.use('/api/templates', templateRoutes);
+app.use('/api/schedules', scheduleRoutes);
+app.use('/api/events', eventsRoutes);
 // Mount other routers under /api as needed
 
 // Test routes (only in test environment)

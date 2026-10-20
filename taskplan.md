@@ -33,7 +33,7 @@
 - [x] **T13.** Built-in templates A–E (critical ticket alert, weekly report, warranty reminder, low inventory, CSV validation) — all must validate clean.
 
 ## Phase 6 — Triggers
-- [ ] **T14.** Schedule trigger (once/hourly/daily/weekly/monthly/cron + timezones) + internal event bus with idempotent fan-out.
+- [x] **T14.** Schedule trigger (once/hourly/daily/weekly/monthly/cron + timezones) + internal event bus with idempotent fan-out.
 - [ ] **T15.** Webhook trigger (unique token, HMAC signature, rate limit, rotation) + real-metrics dashboard with Recharts charts.
 
 ## Phase 7 — Integrations, credentials, notifications, admin
