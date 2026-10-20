@@ -31,7 +31,27 @@ export const nodeRegistry: Record<NodeKind, NodeSpec> = {
       })
       .passthrough(),
   },
-  'trigger.webhook': { category: 'trigger', config: z.object({}).passthrough() },
+  'trigger.webhook': {
+    category: 'trigger',
+    config: z
+      .object({
+        // Unique token for webhook security (can be left empty for auto-generated)
+        token: z.string().min(1).optional(),
+        // HMAC secret for signature verification
+        hmacSecret: z.string().min(1).optional(),
+        // Rate limit: max requests per time window
+        rateLimit: z.number().int().positive().default(100),
+        // Rate limit window in seconds
+        rateLimitWindow: z.number().int().positive().default(60),
+        // Enable signature verification
+        verifySignature: z.boolean().default(true),
+        // Optional: allowed IPs or CIDR ranges for additional security
+        allowedIps: z.array(z.string().ip()).optional(),
+        // Webhook ID (if different from auto-generated)
+        webhookId: z.string().min(1).optional(),
+      })
+      .passthrough(),
+  },
   'trigger.event': {
     category: 'trigger',
     config: z.object({ eventName: z.string().min(1) }).passthrough(),

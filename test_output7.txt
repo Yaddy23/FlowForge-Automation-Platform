@@ -1,0 +1,70 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform[39m
+
+[90mstdout[2m | server/tests/versions.test.ts
+[22m[39m[2026-10-19T11:10:40.213Z] POST /api/auth/login baseUrl: 
+
+[90mstdout[2m | server/tests/versions.test.ts
+[22m[39m[2026-10-19T11:10:40.295Z] POST /api/workflows baseUrl: 
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mshould fail before implementation
+[22m[39m[2026-10-19T11:10:40.309Z] GET /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/diff/2 baseUrl: 
+[AFTER ROUTES] GET /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/diff/2 originalUrl: /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/diff/2
+404: GET / originalUrl: /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/diff/2
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mactivate v1, edit to v2, diff shows change
+[22m[39m[2026-10-19T11:10:40.315Z] POST /api/workflows/6ad5fab03fe1f994c3fdb6da/activate baseUrl: 
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mactivate v1, edit to v2, diff shows change
+[22m[39m[2026-10-19T11:10:40.328Z] POST /api/workflows/6ad5fab03fe1f994c3fdb6da/versions baseUrl: 
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mactivate v1, edit to v2, diff shows change
+[22m[39msaveVersion called: POST /6ad5fab03fe1f994c3fdb6da/versions
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mactivate v1, edit to v2, diff shows change
+[22m[39m[2026-10-19T11:10:40.338Z] GET /api/workflows/6ad5fab03fe1f994c3fdb6da baseUrl: 
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mrestore v1 creates new draft identical to v1, active unchanged
+[22m[39m[2026-10-19T11:10:40.352Z] GET /api/workflows/6ad5fab03fe1f994c3fdb6da baseUrl: 
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mrestore v1 creates new draft identical to v1, active unchanged
+[22m[39m[RESTORE TEST] workflowId: 6ad5fab03fe1f994c3fdb6da, latestVersion: 2, activeVersion: 1
+
+[90mstdout[2m | server/tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mrestore v1 creates new draft identical to v1, active unchanged
+[22m[39m[2026-10-19T11:10:40.362Z] POST /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/restore baseUrl: 
+[AFTER ROUTES] POST /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/restore originalUrl: /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/restore
+404: POST / originalUrl: /api/workflows/6ad5fab03fe1f994c3fdb6da/versions/1/restore
+
+ [31m❯[39m server/tests/versions.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 660[2mms[22m[39m
+   [32m✓[39m Version diff and restore API[2m > [22mshould fail before implementation[32m 6[2mms[22m[39m
+   [32m✓[39m Version diff and restore API[2m > [22mactivate v1, edit to v2, diff shows change[32m 39[2mms[22m[39m
+[31m   [31m×[31m Version diff and restore API[2m > [22mrestore v1 creates new draft identical to v1, active unchanged[39m[32m 19[2mms[22m[39m
+[31m     → expected 404 to be 201 // Object.is equality[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m server/tests/versions.test.ts[2m > [22mVersion diff and restore API[2m > [22mrestore v1 creates new draft identical to v1, active unchanged
+[31m[1mAssertionError[22m: expected 404 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 404[39m
+
+[36m [2m❯[22m server/tests/versions.test.ts:[2m109:31[22m[39m
+    [90m107| [39m      [33m.[39m[34mpost[39m([32m`/api/workflows/[39m[36m${[39mworkflowId[36m}[39m[32m/versions/1/restore`[39m)
+    [90m108| [39m      [33m.[39m[35mset[39m([32m'Authorization'[39m[33m,[39m [32m`Bearer [39m[36m${[39madminToken[36m}[39m[32m`[39m)[33m;[39m
+    [90m109| [39m    [34mexpect[39m(restoreRes[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m [90m// created new draft version[39m
+    [90m   | [39m                              [31m^[39m
+    [90m110| [39m    [90m// Expect latestVersion to be 3 (new draft)[39m
+    [90m111| [39m    [35mconst[39m wfRes2 [33m=[39m [35mawait[39m [34mrequest[39m(app)
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (3)[39m
+[2m   Start at [22m 19:10:37
+[2m   Duration [22m 2.81s[2m (transform 306ms, setup 0ms, collect 1.67s, tests 660ms, environment 0ms, prepare 183ms)[22m
+

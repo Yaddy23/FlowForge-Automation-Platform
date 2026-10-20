@@ -1,0 +1,177 @@
+
+> flowforge-automation-platform@0.1.0 test
+> npm test --workspaces
+
+
+> client@0.1.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform/client[39m
+
+[90mstderr[2m | src/__tests__/workflow-editor.test.tsx[2m > [22m[2mworkflow editor[2m > [22m[2madds a trigger and email node, connects them, fills config, and saves a new workflow
+[22m[39mError: Uncaught [TypeError: Cannot read properties of null (reading 'document')]
+    at reportException (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\jsdom\lib\jsdom\living\helpers\runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:353:9)
+    at invokeEventListeners (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:286:3)
+    at HTMLDivElementImpl._dispatch (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:233:9)
+    at HTMLDivElementImpl.dispatchEvent (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:104:17)
+    at HTMLDivElement.dispatchEvent (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js:241:34)
+    at file:///C:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform/node_modules/@testing-library/user-event/dist/esm/event/dispatchEvent.js:43:33
+    at C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\@testing-library\react\dist\pure.js:113:18
+    at C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\@testing-library\react\dist\act-compat.js:47:24
+    at process.env.NODE_ENV.exports.act (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\react\cjs\react.development.js:890:22) TypeError: Cannot read properties of null (reading 'document')
+    at default (file:///C:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform/node_modules/[4md3-drag[24m/src/nodrag.js:5:19)
+    at HTMLDivElement.mousedowned (file:///C:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform/node_modules/[4md3-drag[24m/src/drag.js:57:5)
+    at HTMLDivElement.<anonymous> (file:///C:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform/node_modules/[4md3-selection[24m/src/selection/on.js:3:14)
+    at HTMLDivElement.callTheUserObjectsOperation (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\[4mjsdom[24m\lib\jsdom\living\generated\EventListener.js:26:30)
+    at innerInvokeEventListeners (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\[4mjsdom[24m\lib\jsdom\living\events\EventTarget-impl.js:350:25)
+    at invokeEventListeners (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\[4mjsdom[24m\lib\jsdom\living\events\EventTarget-impl.js:286:3)
+    at HTMLDivElementImpl._dispatch (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\[4mjsdom[24m\lib\jsdom\living\events\EventTarget-impl.js:233:9)
+    at HTMLDivElementImpl.dispatchEvent (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\[4mjsdom[24m\lib\jsdom\living\events\EventTarget-impl.js:104:17)
+    at HTMLDivElement.dispatchEvent (C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\node_modules\[4mjsdom[24m\lib\jsdom\living\generated\EventTarget.js:241:34)
+    at file:///C:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform/node_modules/[4m@testing-library/user-event[24m/dist/esm/event/dispatchEvent.js:43:33
+
+ [32m✓[39m src/__tests__/app-shell.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 882[2mms[22m[39m
+   [33m[2m✓[22m[39m app shell[2m > [22mrenders login, and submitting demo credentials shows the user name in the user menu [33m 824[2mms[22m[39m
+ [32m✓[39m src/__tests__/workflow-editor.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 2733[2mms[22m[39m
+   [33m[2m✓[22m[39m workflow editor[2m > [22madds a trigger and email node, connects them, fills config, and saves a new workflow [33m 2522[2mms[22m[39m
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of null (reading 'document')[39m
+[90m [2m❯[22m default ../node_modules/d3-drag/src/nodrag.js:[2m5:19[22m[39m
+[90m [2m❯[22m HTMLDivElement.mousedowned ../node_modules/d3-drag/src/drag.js:[2m57:5[22m[39m
+[90m [2m❯[22m HTMLDivElement.<anonymous> ../node_modules/d3-selection/src/selection/on.js:[2m3:14[22m[39m
+[90m [2m❯[22m HTMLDivElement.callTheUserObjectsOperation ../node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:[2m26:30[22m[39m
+[90m [2m❯[22m innerInvokeEventListeners ../node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:[2m350:25[22m[39m
+[90m [2m❯[22m invokeEventListeners ../node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:[2m286:3[22m[39m
+[90m [2m❯[22m HTMLDivElementImpl._dispatch ../node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:[2m233:9[22m[39m
+[90m [2m❯[22m HTMLDivElementImpl.dispatchEvent ../node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:[2m104:17[22m[39m
+[90m [2m❯[22m HTMLDivElement.dispatchEvent ../node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:[2m241:34[22m[39m
+[90m [2m❯[22m ../node_modules/@testing-library/user-event/dist/esm/event/dispatchEvent.js:[2m43:33[22m[39m
+
+[31mThis error originated in "[1msrc/__tests__/workflow-editor.test.tsx[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1madds a trigger and email node, connects them, fills config, and saves a new workflow[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 19:13:26
+[2m   Duration [22m 26.95s[2m (transform 602ms, setup 9.63s, collect 12.81s, tests 3.62s, environment 24.97s, prepare 293ms)[22m
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\client
+npm error workspace client@0.1.0
+npm error location C:\Users\ncbgn\OneDrive\Desktop\PORTFOLIO\FlowForge-Automation-Platform\client
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vitest run
+
+
+> server@0.1.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/ncbgn/OneDrive/Desktop/PORTFOLIO/FlowForge-Automation-Platform/server[39m
+
+ [32m✓[39m tests/conditions.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/workflow-validator.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mcreates the 4 demo accounts with correct roles
+[22m[39mEnsured user admin@flowforge.dev (super_admin)
+
+ [32m✓[39m tests/docs.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mcreates the 4 demo accounts with correct roles
+[22m[39mEnsured user wfadmin@flowforge.dev (workflow_admin)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mcreates the 4 demo accounts with correct roles
+[22m[39mEnsured user builder@flowforge.dev (workflow_builder)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mcreates the 4 demo accounts with correct roles
+[22m[39mEnsured user viewer@flowforge.dev (viewer)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user admin@flowforge.dev (super_admin)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user wfadmin@flowforge.dev (workflow_admin)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user builder@flowforge.dev (workflow_builder)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user viewer@flowforge.dev (viewer)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user admin@flowforge.dev (super_admin)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user wfadmin@flowforge.dev (workflow_admin)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user builder@flowforge.dev (workflow_builder)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mis idempotent: a second run does not duplicate accounts
+[22m[39mEnsured user viewer@flowforge.dev (viewer)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mstores hashed passwords that verify against Demo123!
+[22m[39mEnsured user admin@flowforge.dev (super_admin)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mstores hashed passwords that verify against Demo123!
+[22m[39mEnsured user wfadmin@flowforge.dev (workflow_admin)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mstores hashed passwords that verify against Demo123!
+[22m[39mEnsured user builder@flowforge.dev (workflow_builder)
+
+[90mstdout[2m | tests/seed.test.ts[2m > [22m[2mseedDemoUsers[2m > [22m[2mstores hashed passwords that verify against Demo123!
+[22m[39mEnsured user viewer@flowforge.dev (viewer)
+
+ [32m✓[39m tests/seed.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1824[2mms[22m[39m
+   [33m[2m✓[22m[39m seedDemoUsers[2m > [22mcreates the 4 demo accounts with correct roles [33m 592[2mms[22m[39m
+[90mstdout[2m | tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mactivate v1, edit to v2, diff shows change
+[22m[39msaveVersion called: POST /6ad5fb76f4e21e75e7a63243/versions
+
+[90mstdout[2m | tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mrestore v1 creates new draft identical to v1, active unchanged
+[22m[39m[RESTORE TEST] workflowId: 6ad5fb76f4e21e75e7a63243, latestVersion: 2, activeVersion: 1
+
+[90mstdout[2m | tests/versions.test.ts[2m > [22m[2mVersion diff and restore API[2m > [22m[2mrestore v1 creates new draft identical to v1, active unchanged
+[22m[39m[RESTORE TEST] After restore call, latestVersion: 3, activeVersion: 1
+
+ [32m✓[39m tests/versions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1401[2mms[22m[39m
+[90mstderr[2m | tests/runs.api.test.ts[2m > [22m[2mGET /api/runs/:id (detail with node timeline)[2m > [22m[2mreturns the run with its nodeRuns, secrets redacted and nodeOutputs stripped
+[22m[39m[queues] REDIS_URL not set — BullMQ queues disabled, runs stay queued
+
+[90mstderr[2m | tests/engine.test.ts[2m > [22m[2mExecute API[2m > [22m[2mexecute creates queued run → 202; non-owner builder → 403
+[22m[39m[queues] REDIS_URL not set — BullMQ queues disabled, runs stay queued
+
+[90mstdout[2m | tests/workflow.crud.test.ts[2m > [22m[2mWorkflow CRUD API[2m > [22m[2mactivate v1 then save draft → version 2 while active stays 1
+[22m[39msaveVersion called: POST /6ad5fb77e024378329904e5c/versions
+
+ [32m✓[39m tests/engine.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1999[2mms[22m[39m
+ [32m✓[39m tests/workflow.crud.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2152[2mms[22m[39m
+ [32m✓[39m tests/engine-branching.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1618[2mms[22m[39m
+ [32m✓[39m tests/auth.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 2127[2mms[22m[39m
+   [33m[2m✓[22m[39m Auth Endpoints[2m > [22mPOST /api/auth/login[2m > [22mshould return 200 + accessToken + refreshToken + user object for valid credentials [33m 379[2mms[22m[39m
+ [32m✓[39m tests/runs.api.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2677[2mms[22m[39m
+   [33m[2m✓[22m[39m POST /api/runs/:id/cancel[2m > [22mcancels a running run and the engine does not overwrite it [33m 638[2mms[22m[39m
+[90mstderr[2m | tests/actions.test.ts[2m > [22m[2mdelay action through the engine (waiting → resume)[2m > [22m[2mtransitions the run to waiting, then resumes to completion
+[22m[39m[queues] REDIS_URL not set — BullMQ queues disabled, runs stay queued
+
+ [32m✓[39m tests/actions.test.ts [2m([22m[2m28 tests[22m[2m)[22m[33m 3240[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[32m92 passed[39m[22m[90m (92)[39m
+[2m   Start at [22m 19:13:54
+[2m   Duration [22m 7.24s[2m (transform 1.85s, setup 561ms, collect 23.65s, tests 17.11s, environment 3ms, prepare 2.53s)[22m
+
+
+> shared@0.1.0 test
+> exit 0
+

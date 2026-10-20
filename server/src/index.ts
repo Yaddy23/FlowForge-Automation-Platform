@@ -2,6 +2,7 @@ import app from './app';
 import dotenv from 'dotenv';
 import { startSchedulerService } from './triggers/schedule';
 import { startEventConsumer } from './triggers/event-consumer';
+import { startWebhookConsumer } from './triggers/webhook-consumer';
 
 // Load environment variables
 dotenv.config();
@@ -10,6 +11,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
 
 let schedulerService: any = null;
 let eventConsumer: any = null;
+let webhookConsumer: any = null;
 
 async function startServer() {
   try {
@@ -18,6 +20,10 @@ async function startServer() {
 
     // Start the event consumer
     eventConsumer = await startEventConsumer();
+
+    // Start the webhook consumer and mount its app
+    webhookConsumer = await startWebhookConsumer();
+    app.use('/api/webhooks', webhookConsumer.getApp());
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -37,6 +43,9 @@ process.on('SIGINT', async () => {
   if (schedulerService) {
     await schedulerService.stop();
   }
+  if (webhookConsumer) {
+    await webhookConsumer.stop();
+  }
   process.exit(0);
 });
 
@@ -47,6 +56,9 @@ process.on('SIGTERM', async () => {
   }
   if (schedulerService) {
     await schedulerService.stop();
+  }
+  if (webhookConsumer) {
+    await webhookConsumer.stop();
   }
   process.exit(0);
 });
