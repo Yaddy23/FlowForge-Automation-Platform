@@ -9,6 +9,11 @@ import templateRoutes from './routes/templates.routes';
 import scheduleRoutes from './routes/schedules.routes';
 import eventsRoutes from './routes/events.routes';
 import credentialsRoutes from './routes/credentials.routes';
+import settingsRoutes from './routes/settings.routes';
+import userPreferencesRoutes from './routes/userPreferences.routes';
+import notificationRoutes from './routes/notifications.routes';
+import auditLogsRoutes from './routes/auditLogs.routes';
+import userRoutes from './routes/users.routes';
 // Import other routes here as they are created
 
 // Load environment variables
@@ -28,6 +33,11 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/credentials', credentialsRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/user/preferences', userPreferencesRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/audit-logs', auditLogsRoutes);
+app.use('/api/users', userRoutes);
 // Mount other routers under /api as needed
 
 // Test routes (only in test environment)

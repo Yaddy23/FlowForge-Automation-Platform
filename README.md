@@ -64,3 +64,31 @@ The platform includes a real-time dashboard with Recharts charts showing:
 - Recent workflow activity with status indicators
 
 Access the dashboard at the root path: http://localhost:5173
+
+## In-App Notifications & User Management (Task 17)
+
+The platform now includes a comprehensive notification system and user management capabilities:
+
+### In-App Notifications
+- Real-time notifications for workflow events, failures, and system alerts
+- User-configurable notification preferences (email vs in-app, frequency)
+- Loop-guarded notification delivery that respects user preferences
+- Ability to mark notifications as read/unread and delete them
+- Notification history with pagination and filtering
+
+### User Management (Super Admin Only)
+- Create, view, update, and delete user accounts
+- Role-based access control with four roles: super_admin, workflow_admin, workflow_builder, viewer
+- Automatic preference initialization for new users
+- Secure password storage with bcrypt hashing
+
+### Audit Logs
+- Comprehensive audit trail of security-relevant actions
+- Track user logins, role changes, workflow activations, and more
+- Filterable by action type, target type, and date ranges
+- Statistics dashboard showing notification trends and top actions
+
+### System Settings
+- Configurable system-wide settings (retention limits, concurrency controls)
+- Default settings initialization
+- Ability to add custom settings as needed

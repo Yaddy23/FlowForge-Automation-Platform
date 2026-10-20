@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { startSchedulerService } from './triggers/schedule';
 import { startEventConsumer } from './triggers/event-consumer';
 import { startWebhookConsumer } from './triggers/webhook-consumer';
+import { initializeDefaultSettings } from './services/settings.service';
 
 // Load environment variables
 dotenv.config();
@@ -15,6 +16,9 @@ let webhookConsumer: any = null;
 
 async function startServer() {
   try {
+    // Initialize default settings
+    await initializeDefaultSettings();
+
     // Start the scheduler service
     schedulerService = await startSchedulerService();
 

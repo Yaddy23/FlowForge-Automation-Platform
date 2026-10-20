@@ -25,6 +25,10 @@ import EditorPage from './workflow-editor/EditorPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import IntegrationsPage from './pages/IntegrationsPage';
 import CredentialsPage from './pages/CredentialsPage';
+import NotificationsPage from './pages/NotificationsPage';
+import UsersPage from './pages/UsersPage';
+import AuditLogPage from './pages/AuditLogPage';
+import SettingsPage from './pages/SettingsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,18 +68,18 @@ export function AppRoutes() {
             </RequireRole>
           }
         />
-        <Route path="/notifications" element={<PlaceholderPage icon={Bell} title="Notifications" description="In-app alerts for failed runs and workflow completions." />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/analytics" element={<PlaceholderPage icon={BarChart3} title="Analytics" description="Execution volume, failure categories, and duration trends." />} />
         <Route
           path="/users"
           element={
             <RequireRole roles={['super_admin']}>
-              <PlaceholderPage icon={Users} title="User Management" description="Manage user accounts and roles. Super admins only." />
+              <UsersPage />
             </RequireRole>
           }
         />
-        <Route path="/audit" element={<PlaceholderPage icon={ScrollText} title="Audit Logs" description="A record of security-relevant actions: sign-ins, activations, role changes." />} />
-        <Route path="/settings" element={<PlaceholderPage icon={Settings} title="Settings" description="Workspace preferences: retention days, concurrency limits, and more." />} />
+        <Route path="/audit" element={<AuditLogPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
