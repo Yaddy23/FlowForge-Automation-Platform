@@ -23,6 +23,8 @@ import ExecutionsListPage from './pages/ExecutionsListPage';
 import ExecutionDetailPage from './pages/ExecutionDetailPage';
 import EditorPage from './workflow-editor/EditorPage';
 import PlaceholderPage from './pages/PlaceholderPage';
+import IntegrationsPage from './pages/IntegrationsPage';
+import CredentialsPage from './pages/CredentialsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,12 +55,12 @@ export function AppRoutes() {
         <Route path="/executions/:id" element={<ExecutionDetailPage />} />
         <Route path="/templates" element={<PlaceholderPage icon={FileStack} title="Templates" description="Ready-made workflow templates you can instantiate and customize." />} />
         <Route path="/scheduled" element={<PlaceholderPage icon={CalendarClock} title="Scheduled Runs" description="Upcoming scheduled executions across all workflows." />} />
-        <Route path="/integrations" element={<PlaceholderPage icon={Plug} title="Integrations" description="Connect external services like email providers and help-desk systems." />} />
+        <Route path="/integrations" element={<IntegrationsPage />} />
         <Route
           path="/credentials"
           element={
             <RequireRole roles={['workflow_admin', 'super_admin']}>
-              <PlaceholderPage icon={KeyRound} title="Credentials" description="Encrypted credentials used by your integrations. Never exposed to the browser." />
+              <CredentialsPage />
             </RequireRole>
           }
         />
