@@ -36,7 +36,7 @@ vi.mock('../src/queues', () => {
     mock.set = vi.fn().mockResolvedValue('OK');
     mock.del = vi.fn().mockResolvedValue(1);
     mock.incr = vi.fn().mockResolvedValue(1);
-    mock.expire = vi.fn().mockResortedValue(1);
+    mock.expire = vi.fn().mockResolvedValue(1);
     mock.ttl = vi.fn().mockResolvedValue(-1);
     mock.flushdb = vi.fn().mockResolvedValue('OK');
 
@@ -119,15 +119,15 @@ const testWorkflowDefWithWebhook = {
     { id: 't1', type: 'trigger.webhook', config: { webhookId: 'test-webhook-123', token: 'test-token', hmacSecret: 'test-secret' } },
     { id: 'a1', type: 'action.log', config: { message: 'Webhook received: {{payload.message}}' } }
   ],
-  edges: [{ id: 'e1', source: 't1', target: 'a1' }}
-];
+  edges: [{ id: 'e1', source: 't1', target: 'a1' }]
+};
 
 const testWorkflowDefWithoutAuth = {
   nodes: [
     { id: 't1', type: 'trigger.webhook', config: { webhookId: 'test-webhook-456' } },
     { id: 'a1', type: 'action.log', config: { message: 'Public webhook received' } }
   ],
-  edges: [{ id: 'e1', source: 't1', target: 'a1' }}
+  edges: [{ id: 'e1', source: 't1', target: 'a1' }]
 };
 
 beforeAll(async () => {
@@ -171,6 +171,16 @@ beforeAll(async () => {
 
   expect(wfRes2.status).toBe(201);
   // We don't need to store this workflow ID for most tests
+
+  // Activate both webhook workflows so the consumer finds their triggers
+  for (const wfId of [workflowId, String(wfRes2.body.workflow._id)]) {
+    const v1 = await WorkflowVersion.findOne({ workflow: wfId, version: 1 });
+    const actRes = await request(app)
+      .post(`/api/workflows/${wfId}/activate`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ versionId: String(v1!._id) });
+    expect(actRes.status).toBe(200);
+  }
 });
 
 afterAll(async () => {
@@ -179,10 +189,9 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  // Clear runs before each test
+  // Clear runs before each test (versions must persist: the webhook
+  // consumer reads trigger config from the workflows' active versions)
   await WorkflowRun.deleteMany({});
-  // Clear workflow versions to prevent duplicate key errors
-  await WorkflowVersion.deleteMany({});
 });
 
 describe('Webhook Trigger', () => {
@@ -372,6 +381,14 @@ describe('Webhook Trigger', () => {
 
       expect(wfRes.status).toBe(201);
       const publicWorkflowId = String(wfRes.body.workflow._id);
+
+      // Activate so the consumer finds the webhook trigger
+      const pubV1 = await WorkflowVersion.findOne({ workflow: publicWorkflowId, version: 1 });
+      const pubAct = await request(app)
+        .post(`/api/workflows/${publicWorkflowId}/activate`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ versionId: String(pubV1!._id) });
+      expect(pubAct.status).toBe(200);
 
       // Test the public webhook
       const payload = { message: 'Public webhook test' };

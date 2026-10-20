@@ -1,10 +1,18 @@
 import { Credentials, ICredentials } from '../models/Credentials';
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
-import { Workflow } from '../models/Workflow';
+import Workflow from '../models/Workflow';
 
-const ENCRYPTION_KEY = process.env.CRED_ENCRYPTION_KEY;
-if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length !== 32) {
-  throw new Error('CRED_ENCRYPTION_KEY must be set and be 32 bytes long');
+/**
+ * Returns the 32-byte encryption key from CRED_ENCRYPTION_KEY.
+ * Validated lazily so importing this module never throws when the key is
+ * unset (e.g., in test environments that never touch credentials).
+ */
+function getKey(): Buffer {
+  const key = process.env.CRED_ENCRYPTION_KEY;
+  if (!key || key.length !== 32) {
+    throw new Error('CRED_ENCRYPTION_KEY must be set and be 32 bytes long');
+  }
+  return Buffer.from(key, 'utf8');
 }
 
 /**
@@ -22,7 +30,7 @@ export class CredentialsService {
     tag: Buffer;
   } {
     const iv = randomBytes(12); // GCM recommended IV length
-    const cipher = createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+    const cipher = createCipheriv('aes-256-gcm', getKey(), iv);
     const encryptedData = Buffer.concat([
       cipher.update(value, 'utf8'),
       cipher.final(),
@@ -47,7 +55,7 @@ export class CredentialsService {
     iv: Buffer,
     tag: Buffer
   ): string {
-    const decipher = createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+    const decipher = createDecipheriv('aes-256-gcm', getKey(), iv);
     decipher.setAuthTag(tag);
     const decrypted = Buffer.concat([
       decipher.update(encryptedData),

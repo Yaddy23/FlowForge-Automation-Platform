@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { getUserPreferences, updateUserPreferences } from '../services/userPreferences.service';
-import { RequireAuth } from '../middleware/requireAuth';
 
 /**
  * GET /api/user/preferences

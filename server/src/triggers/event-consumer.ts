@@ -106,7 +106,7 @@ export class EventConsumer {
           if (!version) continue;
 
           // Check if this version has an event trigger matching the eventName
-          const hasMatchingTrigger = version.definition.nodes.some(
+          const hasMatchingTrigger = (version.definition as { nodes: any[] }).nodes.some(
             (node: any) =>
               node.type === 'trigger.event' &&
               node.config.eventName === eventName
@@ -150,7 +150,7 @@ export class EventConsumer {
       // Create the workflow run
       const run = new WorkflowRun({
         workflow: workflow._id,
-        workflowVersion: version._id,
+        workflowVersion: version.version,
         status: 'queued',
         trigger: {
           type: 'event',

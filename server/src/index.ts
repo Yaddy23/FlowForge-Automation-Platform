@@ -25,9 +25,8 @@ async function startServer() {
     // Start the event consumer
     eventConsumer = await startEventConsumer();
 
-    // Start the webhook consumer and mount its app
+    // Start the webhook consumer's worker; its HTTP app is mounted in app.ts
     webhookConsumer = await startWebhookConsumer();
-    app.use('/api/webhooks', webhookConsumer.getApp());
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

@@ -1,19 +1,17 @@
 import { Router } from 'express';
 import {
   getAuditLogsHandler,
-  getAuditStatsHandler
+  getAuditStatsHandler,
 } from '../controllers/audit.controller';
-import { RequireAuth } from '../middleware/requireAuth';
+import { requireAuth } from '../middleware/auth';
+import { validateQuery } from '../middleware/validate';
+import { listQuerySchema } from '../validation/schemas';
 
 const router = Router();
 
-// All audit logs routes require authentication
-router.use(RequireAuth);
+router.use(requireAuth);
 
-// Get audit logs with filtering and pagination
-router.get('/', getAuditLogsHandler);
-
-// Get audit log statistics
+router.get('/', validateQuery(listQuerySchema), getAuditLogsHandler);
 router.get('/stats', getAuditStatsHandler);
 
 export default router;

@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { Worker } from 'bullmq';
+import { Worker, Queue } from 'bullmq';
 import mongoose from 'mongoose';
 import { getConnection } from '../queues';
 import Workflow from '../models/Workflow';
@@ -33,6 +33,7 @@ const rateLimitStore: RateLimitStore = {};
 export class WebhookConsumer {
   private app: express.Application;
   private worker: Worker | null = null;
+  private queue: Queue | null = null;
   private readonly rateLimitWindowMs = 60000; // 1 minute window
   private readonly maxRequestsPerWindow = 100; // Default rate limit
 
@@ -67,6 +68,8 @@ export class WebhookConsumer {
       console.error(`[webhook-consumer] job ${job?.id ?? '?'} failed: ${err.message}`);
     });
 
+    this.queue = new Queue('webhook-triggers', { connection: conn });
+
     console.log('[webhook-consumer] webhook consumer started');
   }
 
@@ -79,6 +82,10 @@ export class WebhookConsumer {
       await this.worker.close();
       this.worker = null;
       console.log('[webhook-consumer] webhook consumer stopped');
+    }
+    if (this.queue) {
+      await this.queue.close();
+      this.queue = null;
     }
   }
 
@@ -93,8 +100,9 @@ export class WebhookConsumer {
    * Setup HTTP routes for receiving webhook requests.
    */
   private setupRoutes(): void {
-    // Webhook endpoint - expects webhookId as a parameter
-    this.app.post('/webhook/:webhookId', this.handleWebhookRequest.bind(this));
+    // Webhook endpoint — param is optional so a missing ID reaches the
+    // handler and gets a 400 instead of a bare 404.
+    this.app.post('/webhook/:webhookId?', this.handleWebhookRequest.bind(this));
   }
 
   /**
@@ -138,12 +146,15 @@ export class WebhookConsumer {
       // Extract event data from request
       const eventData = this.extractEventData(req, webhookConfig);
 
-      // Enqueue job for processing (to avoid blocking HTTP request)
-      if (this.worker) {
-        await this.worker.add('process-webhook', {
+      // Enqueue job for processing (to avoid blocking HTTP request); without
+      // Redis, degrade to inline processing so the run is still created.
+      if (this.queue) {
+        await this.queue.add('process-webhook', {
           webhookId,
           eventData
         });
+      } else {
+        await this.processWebhookTrigger(webhookId, eventData);
       }
 
       res.status(202).json({ message: 'Webhook accepted for processing' });
@@ -172,7 +183,7 @@ export class WebhookConsumer {
         if (!version) continue;
 
         // Check if this version has a webhook trigger matching the webhookId
-        const webhookTrigger = version.definition.nodes.find(
+        const webhookTrigger = (version.definition as { nodes: any[] }).nodes.find(
           (node: any) =>
             node.type === 'trigger.webhook' &&
             node.config.webhookId === webhookId
@@ -264,9 +275,11 @@ export class WebhookConsumer {
   private validateHmacSignature(req: Request, secret: string): boolean {
     const signature = req.headers['x-hub-signature-256'] || req.headers['x-signature'];
     if (!signature) {
-      // If no signature configured, skip validation
-      return !secret; // If secret is configured but no signature provided, fail
+      // No signature header — nothing to verify; token auth (if configured)
+      // already ran. Requests carrying a signature are always verified.
+      return true;
     }
+    const sig = Array.isArray(signature) ? signature[0] : signature;
 
     // Get raw body for HMAC calculation
     // Note: express.json() middleware parses the body, so we need to
@@ -279,9 +292,9 @@ export class WebhookConsumer {
       .digest('hex');
 
     // Compare signatures in constant time to prevent timing attacks
-    const providedHash = signature.startsWith('sha256=')
-      ? signature.substring(7)
-      : signature;
+    const providedHash = sig.startsWith('sha256=')
+      ? sig.substring(7)
+      : sig;
 
     return crypto.timingSafeEqual(
       Buffer.from(expectedHash, 'hex'),
@@ -336,7 +349,7 @@ export class WebhookConsumer {
           if (!version) continue;
 
           // Check if this version has a webhook trigger matching the webhookId
-          const hasMatchingTrigger = version.definition.nodes.some(
+          const hasMatchingTrigger = (version.definition as { nodes: any[] }).nodes.some(
             (node: any) =>
               node.type === 'trigger.webhook' &&
               node.config.webhookId === webhookId
@@ -370,7 +383,7 @@ export class WebhookConsumer {
       // Create the workflow run
       const run = new WorkflowRun({
         workflow: workflow._id,
-        workflowVersion: version._id,
+        workflowVersion: version.version,
         status: 'queued',
         trigger: {
           type: 'webhook',
@@ -405,14 +418,16 @@ export class WebhookConsumer {
   }
 }
 
+/** Shared instance: app.ts mounts its HTTP app, index.ts starts its worker. */
+export const webhookConsumer = new WebhookConsumer();
+
 /**
- * Start the webhook consumer instance.
+ * Start the webhook consumer's worker on the shared instance.
  * @returns The started WebhookConsumer instance
  */
 export async function startWebhookConsumer(): Promise<WebhookConsumer> {
-  const consumer = new WebhookConsumer();
-  await consumer.start();
-  return consumer;
+  await webhookConsumer.start();
+  return webhookConsumer;
 }
 
 // Export types for use in other modules

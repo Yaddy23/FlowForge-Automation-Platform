@@ -3,25 +3,19 @@ import {
   getSettingsHandler,
   getSettingHandler,
   setSettingHandler,
-  initializeSettingsHandler
+  initializeSettingsHandler,
 } from '../controllers/settings.controller';
-import { RequireAuth, RequireRole } from '../middleware/requireAuth';
+import { requireAuth, requireRole } from '../middleware/auth';
+import { validateBody, validateParams, validateQuery } from '../middleware/validate';
+import { setSettingSchema, listQuerySchema, settingKeyParamSchema } from '../validation/schemas';
 
 const router = Router();
 
-// All settings routes require authentication
-router.use(RequireAuth);
+router.use(requireAuth);
 
-// Get all settings or specific settings by query keys
-router.get('/', getSettingsHandler);
-
-// Get a specific setting by key
-router.get('/:key', getSettingHandler);
-
-// Set a setting (requires workflow_admin or super_admin)
-router.post('/', RequireRole(['workflow_admin', 'super_admin']), setSettingHandler);
-
-// Initialize default settings (requires super_admin)
-router.post('/initialize', RequireRole(['super_admin']), initializeSettingsHandler);
+router.get('/', validateQuery(listQuerySchema), getSettingsHandler);
+router.get('/:key', validateParams(settingKeyParamSchema), getSettingHandler);
+router.post('/', requireRole('workflow_admin', 'super_admin'), validateBody(setSettingSchema), setSettingHandler);
+router.post('/initialize', requireRole('super_admin'), initializeSettingsHandler);
 
 export default router;

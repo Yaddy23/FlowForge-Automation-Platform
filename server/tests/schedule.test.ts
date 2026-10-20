@@ -38,7 +38,7 @@ vi.mock('../src/queues', () => {
   };
 });
 
-// Mock the bullmq Worker class
+// Mock the bullmq Worker and Queue classes
 vi.mock('bullmq', () => {
   return {
     Worker: vi.fn().mockImplementation(() => {
@@ -53,14 +53,19 @@ vi.mock('bullmq', () => {
           return this;
         })
       };
+    }),
+    Queue: vi.fn().mockImplementation(() => {
+      return {
+        add: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined)
+      };
     })
   };
 });
 
-// Mock dayjs to ensure plugins are applied
-const dayjs = require('dayjs');
-require('dayjs/plugin/timezone')(dayjs);
-require('dayjs/plugin/utc')(dayjs);
+// Dayjs plugins must be loaded with dayjs.extend() — direct plugin calls
+// expect (option, Dayjs, dayjsFactory) and throw on a dayjs argument.
+import dayjs from 'dayjs';
 
 // Now import the scheduler service after the mocks are set up
 import { startSchedulerService, SchedulerService } from '../src/triggers/schedule';

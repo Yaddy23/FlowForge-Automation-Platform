@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq';
+import { Worker, Queue } from 'bullmq';
 import mongoose from 'mongoose';
 import { getConnection } from '../queues';
 import WorkflowSchedule from '../models/WorkflowSchedule';
@@ -11,10 +11,14 @@ import { randomUUID } from 'node:crypto';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import CronParser from 'cron-parser';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 
 interface ScheduleJobData {
   type: 'scheduler-tick';
@@ -26,6 +30,7 @@ interface ScheduleJobData {
  */
 export class SchedulerService {
   private worker: Worker | null = null;
+  private queue: Queue | null = null;
   private readonly intervalMs = 60000; // Check every minute
 
   /**
@@ -49,19 +54,18 @@ export class SchedulerService {
       { connection: conn }
     );
 
-    // Add a repeatable job that runs every minute
-    if (this.worker) {
-      await this.worker.add(
-        'scheduler-tick',
-        { type: 'scheduler-tick' },
-        {
-          repeat: {
-            every: this.intervalMs,
-          },
-          jobId: 'scheduler-tick',
-        }
-      );
-    }
+    // Repeatable tick jobs live on the queue — Worker only consumes, Queue adds
+    this.queue = new Queue('scheduler', { connection: conn });
+    await this.queue.add(
+      'scheduler-tick',
+      { type: 'scheduler-tick' },
+      {
+        repeat: {
+          every: this.intervalMs,
+        },
+        jobId: 'scheduler-tick',
+      }
+    );
 
     this.worker.on('failed', (job, err) => {
       console.error(`[scheduler] job ${job?.id ?? '?'} failed: ${err.message}`);
@@ -79,6 +83,10 @@ export class SchedulerService {
       await this.worker.close();
       this.worker = null;
       console.log('[scheduler] scheduler service stopped');
+    }
+    if (this.queue) {
+      await this.queue.close();
+      this.queue = null;
     }
   }
 
@@ -134,13 +142,15 @@ export class SchedulerService {
    */
   private async shouldRunSchedule(
     schedule: mongoose.Document & mongoose.Schema.Types.ObjectId & any,
-    now: dayjs.Dayjs
+    now: dayjs.Dayjs | Date
   ): Promise<boolean> {
+    // Callers (and tests) may pass a raw Date — coerce before plugin methods.
+    const nowD = dayjs.isDayjs(now) ? now : dayjs(now);
     // Handle 'once' schedules - they should run at their nextRunAt time
     if (schedule.type === 'once') {
       if (!schedule.nextRunAt) return false;
       const nextRunAt = dayjs(schedule.nextRunAt);
-      return nextRunAt.isSameOrBefore(now, 'minute');
+      return nextRunAt.isSameOrBefore(nowD, 'minute');
     }
 
     // For repeating schedules, check if it's time based on the schedule type
@@ -148,15 +158,15 @@ export class SchedulerService {
 
     switch (schedule.type) {
       case 'hourly':
-        return this.shouldRunHourly(schedule, now, nextRunAt);
+        return this.shouldRunHourly(schedule, nowD, nextRunAt);
       case 'daily':
-        return this.shouldRunDaily(schedule, now, nextRunAt);
+        return this.shouldRunDaily(schedule, nowD, nextRunAt);
       case 'weekly':
-        return this.shouldRunWeekly(schedule, now, nextRunAt);
+        return this.shouldRunWeekly(schedule, nowD, nextRunAt);
       case 'monthly':
-        return this.shouldRunMonthly(schedule, now, nextRunAt);
+        return this.shouldRunMonthly(schedule, nowD, nextRunAt);
       case 'cron':
-        return this.shouldRunCron(schedule, now, nextRunAt);
+        return this.shouldRunCron(schedule, nowD, nextRunAt);
       default:
         return false;
     }
@@ -236,7 +246,7 @@ export class SchedulerService {
       });
 
       const nextRun = interval.next();
-      const nextRunDayjs = dayjs(nextRun).tz(tz);
+      const nextRunDayjs = dayjs(nextRun.toDate()).tz(tz);
 
       // If we've never run before, or if it's time to run based on the cron expression
       return !nextRunAt || nowInTz.isSameOrAfter(nextRunDayjs, 'minute');
@@ -261,7 +271,7 @@ export class SchedulerService {
       // Create the workflow run
       const run = new WorkflowRun({
         workflow: workflow._id,
-        workflowVersion: version._id,
+        workflowVersion: version.version,
         status: 'queued',
         trigger: {
           type: 'schedule',
@@ -342,7 +352,7 @@ export class SchedulerService {
               currentDate: nowInTz.toDate(),
             });
             const nextRun = interval.next();
-            nextRunAt = dayjs(nextRun).tz(tz);
+            nextRunAt = dayjs(nextRun.toDate()).tz(tz);
           } catch (error) {
             console.error(`[scheduler] Error calculating next run for cron schedule ${schedule._id}:`, error);
           }

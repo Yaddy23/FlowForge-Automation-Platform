@@ -4,14 +4,20 @@ import Workflow from '../models/Workflow';
 import WorkflowSchedule from '../models/WorkflowSchedule';
 import mongoose from 'mongoose';
 import type { Request, Response, NextFunction } from 'express';
+import { validateParams, validateBody } from '../middleware/validate';
+import { objectIdSchema, scheduleSchema } from '../validation/schemas';
+import { z } from 'zod';
+import CronParser from 'cron-parser';
 
 const router = Router();
+
+const idParam = validateParams(z.object({ id: objectIdSchema }));
 
 /**
  * @route GET /api/workflows/:id/schedule
  * @desc Get a workflow's schedule
  */
-router.get('/:id/schedule', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/schedule', requireAuth, idParam, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const workflow = await Workflow.findById(req.params.id);
     if (!workflow) {
@@ -33,7 +39,7 @@ router.get('/:id/schedule', requireAuth, async (req: Request, res: Response, nex
  * @route POST /api/workflows/:id/schedule
  * @desc Create or update a schedule for a workflow
  */
-router.post('/:id/schedule', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/schedule', requireAuth, idParam, validateBody(scheduleSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const workflow = await Workflow.findById(req.params.id);
     if (!workflow) {
@@ -58,8 +64,6 @@ router.post('/:id/schedule', requireAuth, async (req: Request, res: Response, ne
     // Validate cron expression if type is cron
     if (type === 'cron' && cron) {
       try {
-        // Import cron-parser dynamically to avoid issues if not available
-        const CronParser = require('cron-parser');
         CronParser.parseExpression(cron, { currentDate: new Date() });
       } catch (error) {
         return res.status(400).json({ error: 'Invalid cron expression' });
@@ -72,7 +76,7 @@ router.post('/:id/schedule', requireAuth, async (req: Request, res: Response, ne
     if (schedule) {
       // Update existing schedule
       schedule.type = type;
-      schedule.cron = type === 'cron' ? cron : null;
+      schedule.cron = type === 'cron' ? cron : undefined;
       schedule.timezone = timezone || 'UTC';
       schedule.enabled = enabled ?? true;
 
@@ -87,7 +91,7 @@ router.post('/:id/schedule', requireAuth, async (req: Request, res: Response, ne
       schedule = new WorkflowSchedule({
         workflow: workflow._id,
         type,
-        cron: type === 'cron' ? cron : null,
+        cron: type === 'cron' ? cron : undefined,
         timezone: timezone || 'UTC',
         enabled: enabled ?? true,
         nextRunAt: type === 'once' ? new Date() : undefined, // Run once schedules run immediately by default
@@ -106,7 +110,7 @@ router.post('/:id/schedule', requireAuth, async (req: Request, res: Response, ne
  * @route DELETE /api/workflows/:id/schedule
  * @desc Delete a workflow's schedule
  */
-router.delete('/:id/schedule', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id/schedule', requireAuth, idParam, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const workflow = await Workflow.findById(req.params.id);
     if (!workflow) {

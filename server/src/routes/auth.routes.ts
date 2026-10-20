@@ -1,22 +1,30 @@
 import { Router } from 'express';
 import { register, login, refresh } from '../controllers/auth.controller';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { authLimiter } from '../middleware/security';
+import { validateBody } from '../middleware/validate';
+import { z } from 'zod';
 
 const router = Router();
 
-// Public endpoints
-router.post('/register', register);
-router.post('/login', login);
-router.post('/refresh', refresh);
+const registerSchema = z.object({
+  email: z.string().email().max(254),
+  password: z.string().min(8).max(128),
+  name: z.string().min(1).max(100),
+});
 
-// Example protected route for testing (can be removed or moved elsewhere)
-// router.get('/protected', requireAuth, (req, res) => {
-//   res.json({ message: 'Protected route accessed', user: req.user });
-// });
+const loginSchema = z.object({
+  email: z.string().email().max(254),
+  password: z.string().min(1).max(128),
+});
 
-// Example role-protected route for testing
-// router.get('/admin', requireAuth, requireRole('super_admin'), (req, res) => {
-//   res.json({ message: 'Admin route accessed', user: req.user });
-// });
+const refreshSchema = z.object({
+  refreshToken: z.string().min(10).max(2048),
+});
+
+// Public endpoints — rate limited and schema-validated
+router.post('/register', authLimiter, validateBody(registerSchema), register);
+router.post('/login', authLimiter, validateBody(loginSchema), login);
+router.post('/refresh', authLimiter, validateBody(refreshSchema), refresh);
 
 export default router;

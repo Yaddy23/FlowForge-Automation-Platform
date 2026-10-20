@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import request from 'supertest';
 import app from '../src/app';
 import Workflow from '../src/models/Workflow';
-import WorkflowVersion from '../src/models/WorkflowVersion>;
+import WorkflowVersion from '../src/models/WorkflowVersion';
 import WorkflowRun from '../src/models/WorkflowRun';
 import { getEventsQueue } from '../src/queues';
 

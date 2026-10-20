@@ -1,19 +1,17 @@
 import { Router } from 'express';
 import {
   getUserPreferencesHandler,
-  updateUserPreferencesHandler
+  updateUserPreferencesHandler,
 } from '../controllers/userPreferences.controller';
-import { RequireAuth } from '../middleware/requireAuth';
+import { requireAuth } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
+import { updatePreferencesSchema } from '../validation/schemas';
 
 const router = Router();
 
-// All user preferences routes require authentication
-router.use(RequireAuth);
+router.use(requireAuth);
 
-// Get the current user's preferences
 router.get('/', getUserPreferencesHandler);
-
-// Update the current user's preferences
-router.put('/', updateUserPreferencesHandler);
+router.put('/', validateBody(updatePreferencesSchema), updateUserPreferencesHandler);
 
 export default router;

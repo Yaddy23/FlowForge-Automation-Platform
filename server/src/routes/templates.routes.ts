@@ -5,6 +5,9 @@ import Workflow from '../models/Workflow';
 import WorkflowVersion from '../models/WorkflowVersion';
 import mongoose from 'mongoose';
 import type { Request, Response, NextFunction } from 'express';
+import { validateParams } from '../middleware/validate';
+import { objectIdSchema } from '../validation/schemas';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -25,7 +28,11 @@ router.get('/', requireAuth, async (_req: Request, res: Response, next: NextFunc
  * @route POST /api/templates/:id/instantiate
  * @desc Create a new draft workflow from a template for the current user
  */
-router.post('/:id/instantiate', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.post(
+  '/:id/instantiate',
+  requireAuth,
+  validateParams(z.object({ id: objectIdSchema })),
+  async (req: Request, res: Response, next: NextFunction) => {
   try {
     const template = await WorkflowTemplate.findById(req.params.id);
     if (!template) {
@@ -63,6 +70,7 @@ router.post('/:id/instantiate', requireAuth, async (req: Request, res: Response,
   } catch (error) {
     next(error);
   }
-});
+  }
+);
 
 export default router;

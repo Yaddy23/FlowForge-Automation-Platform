@@ -4,28 +4,20 @@ import {
   markAsReadHandler,
   markAllAsReadHandler,
   deleteNotificationHandler,
-  deleteAllNotificationsHandler
+  deleteAllNotificationsHandler,
 } from '../controllers/notification.controller';
-import { RequireAuth } from '../middleware/requireAuth';
+import { requireAuth } from '../middleware/auth';
+import { validateParams, validateQuery } from '../middleware/validate';
+import { objectIdSchema, listQuerySchema } from '../validation/schemas';
 
 const router = Router();
 
-// All notification routes require authentication
-router.use(RequireAuth);
+router.use(requireAuth);
 
-// Get notifications for the current user
-router.get('/', getNotificationsHandler);
-
-// Mark a notification as read
-router.put('/:id/read', markAsReadHandler);
-
-// Mark all notifications as read
+router.get('/', validateQuery(listQuerySchema), getNotificationsHandler);
 router.put('/read-all', markAllAsReadHandler);
-
-// Delete a notification
-router.delete('/:id', deleteNotificationHandler);
-
-// Delete all notifications
+router.put('/:id/read', validateParams(objectIdSchema), markAsReadHandler);
+router.delete('/:id', validateParams(objectIdSchema), deleteNotificationHandler);
 router.delete('/', deleteAllNotificationsHandler);
 
 export default router;

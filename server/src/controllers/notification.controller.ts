@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import Notification from '../models/Notification';
-import { RequireAuth } from '../middleware/requireAuth';
 import { Types } from 'mongoose';
 
 /**

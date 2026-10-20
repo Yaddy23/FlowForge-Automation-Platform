@@ -14,6 +14,8 @@ import userPreferencesRoutes from './routes/userPreferences.routes';
 import notificationRoutes from './routes/notifications.routes';
 import auditLogsRoutes from './routes/auditLogs.routes';
 import userRoutes from './routes/users.routes';
+import { applySecurityMiddleware, apiLimiter } from './middleware/security';
+import { webhookConsumer } from './triggers/webhook-consumer';
 // Import other routes here as they are created
 
 // Load environment variables
@@ -21,16 +23,19 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(express.json());
+// Security headers, CORS, body limits
+applySecurityMiddleware(app);
+
+// General rate limit on all API routes
+app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/docs', openapiRoutes);
 app.use('/api/workflows', workflowRoutes);
+app.use('/api/workflows', scheduleRoutes); // :id/schedule subresource of workflows
 app.use('/api/runs', runsRoutes);
 app.use('/api/templates', templateRoutes);
-app.use('/api/schedules', scheduleRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/credentials', credentialsRoutes);
 app.use('/api/settings', settingsRoutes);
@@ -38,6 +43,8 @@ app.use('/api/user/preferences', userPreferencesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit-logs', auditLogsRoutes);
 app.use('/api/users', userRoutes);
+// Webhook trigger endpoint (shared consumer instance; index.ts starts its worker)
+app.use(webhookConsumer.getApp());
 // Mount other routers under /api as needed
 
 // Test routes (only in test environment)

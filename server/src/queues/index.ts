@@ -33,6 +33,8 @@ function getConnection(): Redis | null {
   return connection;
 }
 
+export { getConnection };
+
 export const RUN_QUEUE_NAME = 'workflow-runs';
 export const EVENTS_QUEUE_NAME = 'workflow-events';
 
@@ -74,6 +76,26 @@ export async function enqueueRun(runId: string, opts?: { delayMs?: number }): Pr
       removeOnComplete: { count: 1000 },
       removeOnFail: { count: 5000 },
     }
+  );
+}
+
+/**
+ * Enqueues an internal-bus event for the EventConsumer. `eventId` doubles as
+ * the BullMQ jobId so duplicate publishes of the same event are deduped while
+ * the job still exists (idempotent fan-out). Throws without Redis — callers
+ * treat a dropped event as an error rather than silently losing it.
+ */
+export async function enqueueEvent(
+  eventName: string,
+  eventId: string,
+  payload: Record<string, unknown>
+): Promise<void> {
+  const queue = getEventsQueue();
+  if (!queue) throw new Error('Redis unavailable — cannot publish event');
+  await queue.add(
+    'event',
+    { eventName, eventId, payload },
+    { jobId: eventId, removeOnComplete: { count: 1000 }, removeOnFail: { count: 5000 } }
   );
 }
 

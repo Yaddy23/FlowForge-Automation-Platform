@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { getSetting, setSetting, getSettings, initializeDefaultSettings } from '../services/settings.service';
-import { RequireRole } from '../middleware/requireRole';
+import { setSetting, getSettings, initializeDefaultSettings } from '../services/settings.service';
+import Settings from '../models/Settings';
 
 /**
  * GET /api/settings
@@ -9,8 +9,8 @@ import { RequireRole } from '../middleware/requireRole';
 export const getSettingsHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { keys } = req.query;
-    let settings;
-    
+    let settings: Record<string, unknown>;
+
     if (keys && typeof keys === 'string') {
       const keyArray = keys.split(',').map(k => k.trim());
       settings = await getSettings(keyArray);

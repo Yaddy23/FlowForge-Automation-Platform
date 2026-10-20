@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { CredentialsService } from '../services/credentials.service';
-import { Workflow } from '../models/Workflow';
 
 /**
  * @route GET /api/credentials

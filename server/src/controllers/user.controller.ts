@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
-import bcrypt from 'bcryptjs';
-import { RequireAuth, RequireRole } from '../middleware/requireAuth';
 
 /**
  * GET /api/users
@@ -111,15 +109,12 @@ export const createUserHandler = async (req: Request, res: Response, next: NextF
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user
+    // Create user — the model's pre-save hook hashes the password, so pass
+    // the plaintext here (hashing first would double-hash and break login)
     const user = await User.create({
       email,
       name,
-      password: hashedPassword,
+      password,
       role
     });
 
@@ -133,7 +128,7 @@ export const createUserHandler = async (req: Request, res: Response, next: NextF
         email: user.email,
         name: user.name,
         role: user.role,
-        createdAt: user.createdAt
+        createdAt: (user.toObject() as { createdAt?: Date }).createdAt
       }
     });
   } catch (error) {

@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import AuditLog from '../models/AuditLog';
-import { RequireAuth, RequireRole } from '../middleware/requireAuth';
 import { Types } from 'mongoose';
 
 /**

@@ -40,14 +40,19 @@ const workflowRunSchema = new Schema<IWorkflowRun>(
       default: 'queued',
       index: true,
     },
-    trigger: {
-      type: {
-        type: String,
-        enum: ['manual', 'schedule', 'webhook', 'event'],
-        required: true,
+    trigger: new Schema(
+      {
+        type: {
+          type: String,
+          enum: ['manual', 'schedule', 'webhook', 'event'],
+          required: true,
+        },
+        payload: { type: Schema.Types.Mixed, default: {} },
       },
-      payload: { type: Schema.Types.Mixed, default: {} },
-    },
+      // Webhook/event triggers carry arbitrary caller fields (e.g. the
+      // request body); strict mode would strip them.
+      { strict: false }
+    ),
     idempotencyKey: { type: String, required: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     timeoutMs: { type: Number, default: () => parseInt(process.env.RUN_TIMEOUT_MS ?? '300000', 10) },
