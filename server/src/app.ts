@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import { requireAuth, requireRole } from './middleware/auth';
@@ -25,6 +26,16 @@ const app = express();
 
 // Security headers, CORS, body limits
 applySecurityMiddleware(app);
+
+// Liveness/readiness probe, mounted before the API rate limiter so platform
+// health checks (Render) and the Playwright webServer never consume the API
+// request budget. Reports 503 while MongoDB is unreachable.
+app.get('/api/health', (_req: Request, res: Response) => {
+  const connected = mongoose.connection.readyState === 1;
+  res
+    .status(connected ? 200 : 503)
+    .json({ status: connected ? 'ok' : 'degraded', db: connected ? 'connected' : 'disconnected' });
+});
 
 // General rate limit on all API routes
 app.use('/api', apiLimiter);

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { apiGet } from '../lib/api';
-import { ScrollText, RefreshCw } from 'lucide-react';
 
 interface AuditLog {
   _id: string;
@@ -20,8 +19,7 @@ export default function AuditLogPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(50);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [limit] = useState<number>(50);
   const [filters, setFilters] = useState({
     action: '',
     targetType: '',
@@ -53,9 +51,8 @@ export default function AuditLogPage() {
           limit: number;
           pages: number;
         }
-      }>(`/api/audit-logs?${params}`);
+      }>(`/audit-logs?${params}`);
       setAuditLogs(data.auditLogs);
-      setTotalPages(data.pagination.pages);
     } catch (err) {
       setError('Failed to load audit logs');
       console.error('Error fetching audit logs:', err);

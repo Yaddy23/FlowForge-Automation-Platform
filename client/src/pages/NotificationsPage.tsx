@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiGet, apiPut, apiDelete } from '../lib/api';
-import { Bell, RefreshCw, X } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 
 interface Notification {
   _id: string;
@@ -14,7 +14,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(50);
+  const [limit] = useState<number>(50);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
 
@@ -39,7 +39,7 @@ export default function NotificationsPage() {
           limit: number;
           pages: number;
         }
-      }>(`/api/notifications?${params}`);
+      }>(`/notifications?${params}`);
       setNotifications(data.notifications);
       setTotalPages(data.pagination.pages);
     } catch (err) {
@@ -52,7 +52,7 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await apiPut(`/api/notifications/${id}/read`);
+      await apiPut(`/notifications/${id}/read`);
       await fetchNotifications();
     } catch (err) {
       setError('Failed to mark notification as read');
@@ -62,7 +62,7 @@ export default function NotificationsPage() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await apiPut(`/api/notifications/read-all`);
+      await apiPut(`/notifications/read-all`);
       await fetchNotifications();
     } catch (err) {
       setError('Failed to mark all notifications as read');
@@ -72,7 +72,7 @@ export default function NotificationsPage() {
 
   const handleDeleteNotification = async (id: string) => {
     try {
-      await apiDelete(`/api/notifications/${id}`);
+      await apiDelete(`/notifications/${id}`);
       await fetchNotifications();
     } catch (err) {
       setError('Failed to delete notification');
@@ -82,7 +82,7 @@ export default function NotificationsPage() {
 
   const handleDeleteAllNotifications = async () => {
     try {
-      await apiDelete(`/api/notifications`);
+      await apiDelete(`/notifications`);
       await fetchNotifications();
     } catch (err) {
       setError('Failed to delete all notifications');

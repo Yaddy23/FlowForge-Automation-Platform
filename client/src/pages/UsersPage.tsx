@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
-import { Users, RefreshCw, Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -21,7 +21,7 @@ export default function UsersPage() {
   const [createPassword, setCreatePassword] = useState<string>('');
   const [createRole, setCreateRole] = useState<string>('viewer');
   const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(50);
+  const [limit] = useState<number>(50);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [filters, setFilters] = useState({
     search: '',
@@ -35,7 +35,7 @@ export default function UsersPage() {
     fetchUsers();
   }, [page, limit, filters]);
 
-  const fetchUsers = async () {
+  const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -53,7 +53,7 @@ export default function UsersPage() {
           limit: number;
           pages: number;
         }
-      }>(`/api/users?${params}`);
+      }>(`/users?${params}`);
       setUsers(data.users);
       setTotalPages(data.pagination.pages);
     } catch (err) {
@@ -74,7 +74,7 @@ export default function UsersPage() {
     setCreating(true);
     setCreateError(null);
     try {
-      await apiPost('/api/users', {
+      await apiPost('/users', {
         email: createEmail,
         name: createName,
         password: createPassword,
@@ -100,7 +100,7 @@ export default function UsersPage() {
     }
 
     try {
-      await apiPut(`/api/users/${userId}`, {
+      await apiPut(`/users/${userId}`, {
         name: editName,
         role: editRole
       });
@@ -113,7 +113,7 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (id: string) => {
     try {
-      await apiDelete(`/api/users/${id}`);
+      await apiDelete(`/users/${id}`);
       await fetchUsers();
     } catch (err) {
       setError('Failed to delete user');
@@ -141,7 +141,7 @@ export default function UsersPage() {
   if (error) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4>User Management</h1>
+        <h1 className="text-2xl font-bold mb-4">User Management</h1>
         <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-4">
           <p>{error}</p>
         </div>
@@ -151,18 +151,18 @@ export default function UsersPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6>User Management</h1>
-      <p className="mb-4 text-sm text-gray-500>
+      <h1 className="text-2xl font-bold mb-6">User Management</h1>
+      <p className="mb-4 text-sm text-gray-500">
         Manage user accounts and roles. Super admins only.
       </p>
 
       {/* Controls */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1 min-width-0">
-          <h2 className="text-xl font-bold mb-4>Filters</h2>
+          <h2 className="text-xl font-bold mb-4">Filters</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search
               </label>
               <input
@@ -177,7 +177,7 @@ export default function UsersPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Role
               </label>
               <select
@@ -225,10 +225,10 @@ export default function UsersPage() {
       {/* Create User Form */}
       {creating && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4>Add New User</h2>
+          <h2 className="text-xl font-bold mb-4">Add New User</h2>
           <form onSubmit={handleCreateSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email
               </label>
               <input
@@ -241,7 +241,7 @@ export default function UsersPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Name
               </label>
               <input
@@ -254,7 +254,7 @@ export default function UsersPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <input
@@ -267,7 +267,7 @@ export default function UsersPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Role
               </label>
               <select
@@ -284,7 +284,7 @@ export default function UsersPage() {
               </select>
             </div>
             {createError && (
-              <p className="text-sm text-red-600>
+              <p className="text-sm text-red-600">
                 {createError}
               </p>
             )}
@@ -301,9 +301,9 @@ export default function UsersPage() {
 
       {/* Users List */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4>Users List</h2>
+        <h2 className="text-xl font-bold mb-4">Users List</h2>
         {users.length === 0 ? (
-          <p className="text-center text-gray-500 py-8>
+          <p className="text-center text-gray-500 py-8">
             No users found.
           </p>
         ) : (
@@ -312,16 +312,16 @@ export default function UsersPage() {
               <div key={user._id} className="border-t border-gray-200 pt-4 first:border-t-0">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium text-gray-900>
+                    <h3 className="font-medium text-gray-900">
                       {user.name}
                     </h3>
-                    <p className="text-sm text-gray-500>
+                    <p className="text-sm text-gray-500">
                       {user.email}
                     </p>
-                    <p className="text-xs text-gray-400>
+                    <p className="text-xs text-gray-400">
                       Role: {user.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                     </p>
-                    <p className="text-xs text-gray-400>
+                    <p className="text-xs text-gray-400">
                       Created: {new Date(user.createdAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -382,7 +382,7 @@ export default function UsersPage() {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between">
-          <div className="text-sm text-gray-500>
+          <div className="text-sm text-gray-500">
             Page {page} of {totalPages}
           </div>
           <div className="flex items-center gap-2">

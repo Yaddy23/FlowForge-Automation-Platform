@@ -81,6 +81,31 @@ services:
       - NODE_ENV=development
     command: npm run worker
 
+  # CI-friendly E2E runner:
+  #   docker compose --profile e2e up --abort-on-container-exit e2e
+  # Drives the same specs as `npm run test:e2e`, but against this compose stack
+  # instead of the throwaway mongod + API + Vite that playwright.config.ts
+  # starts on its own. E2E_MONGODB_URI is what opts global-setup into seeding
+  # this stack's database.
+  #
+  # NOTE: unverified — Docker was not available in the environment this was
+  # written in, and it needs the server/client Dockerfiles from Task 21. The
+  # client service must also serve Vite on 0.0.0.0 (--host 0.0.0.0) rather than
+  # its default `localhost`, or http://client:5173 is unreachable from here.
+  e2e:
+    profiles: ["e2e"]
+    build:
+      context: .
+      dockerfile: e2e/Dockerfile
+    container_name: flowforge-e2e
+    environment:
+      - PLAYWRIGHT_BASE_URL=http://client:5173
+      - PLAYWRIGHT_API_URL=http://server:3001
+      - E2E_MONGODB_URI=mongodb://flowforge:flowforge123@mongo:27017/flowforge-e2e?authSource=admin
+    depends_on:
+      - server
+      - client
+
 volumes:
   mongo_data:
   redis_data:

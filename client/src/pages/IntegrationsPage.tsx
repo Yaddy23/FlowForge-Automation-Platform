@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGet, apiPost } from '../lib/api';
-import { Plug, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 interface Integration {
   _id: string;

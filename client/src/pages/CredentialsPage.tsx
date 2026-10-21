@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiGet, apiPost, apiDelete } from '../lib/api';
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 interface Credential {
   _id: string;
@@ -28,7 +28,7 @@ export default function CredentialsPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiGet<Credential[]>('/api/credentials');
+      const data = await apiGet<Credential[]>('/credentials');
       setCredentials(data);
     } catch (err) {
       setError('Failed to load credentials');
@@ -48,7 +48,7 @@ export default function CredentialsPage() {
     setCreating(true);
     setCreateError(null);
     try {
-      await apiPost('/api/credentials', {
+      await apiPost('/credentials', {
         name: createName,
         credentialType: createType,
         value: createValue,
@@ -68,7 +68,7 @@ export default function CredentialsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await apiDelete(`/api/credentials/${id}`);
+      await apiDelete(`/credentials/${id}`);
       await fetchCredentials();
     } catch (err) {
       setError('Failed to delete credential');

@@ -1,16 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  Bell,
-  CalendarClock,
-  FileStack,
-  KeyRound,
-  Plug,
-  ScrollText,
-  Settings,
-  Users,
-  BarChart3,
-} from 'lucide-react';
+import { CalendarClock, FileStack, BarChart3 } from 'lucide-react';
 import { AuthProvider } from './lib/auth-context';
 import { ToastProvider } from './components/ui/toast';
 import AppLayout from './components/layout/AppLayout';
@@ -53,7 +43,17 @@ export function AppRoutes() {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/workflows" element={<WorkflowsListPage />} />
-        <Route path="/workflows/builder/:id" element={<EditorPage />} />
+        {/* The sidebar already hides the builder from viewers; this guard makes
+            the URL agree with it rather than letting a viewer open an editor
+            whose Save button the API would reject. */}
+        <Route
+          path="/workflows/builder/:id"
+          element={
+            <RequireRole roles={['workflow_builder', 'workflow_admin', 'super_admin']}>
+              <EditorPage />
+            </RequireRole>
+          }
+        />
         <Route path="/workflows/:id/executions" element={<ExecutionsListPage />} />
         <Route path="/executions" element={<ExecutionsListPage />} />
         <Route path="/executions/:id" element={<ExecutionDetailPage />} />

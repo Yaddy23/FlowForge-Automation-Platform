@@ -1,4 +1,4 @@
-import { Activity, BarChart2, PieChart, Clock } from 'lucide-react';
+import { Activity, PieChart, Clock } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
@@ -34,13 +34,6 @@ interface RunStats {
   webhook: number;
 }
 
-interface TriggerTypeCount {
-  manual: number;
-  schedule: number;
-  event: number;
-  webhook: number;
-}
-
 export default function DashboardPage() {
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [stats, setStats] = useState<RunStats>({
@@ -59,6 +52,15 @@ export default function DashboardPage() {
   const [dailyRuns, setDailyRuns] = useState<Array<{ date: string; count: number }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Only non-zero trigger types get a slice, so a manual-only workflow set does
+  // not render three zero-width labels around the ring.
+  const triggerData = [
+    { name: 'Manual', value: stats.manual, fill: '#3b82f6' },
+    { name: 'Schedule', value: stats.schedule, fill: '#10b981' },
+    { name: 'Event', value: stats.event, fill: '#f59e0b' },
+    { name: 'Webhook', value: stats.webhook, fill: '#ef4444' }
+  ].filter((entry) => entry.value > 0);
 
   useEffect(() => {
     fetchDashboardData();
@@ -247,13 +249,13 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-gray-500 mb-4 flex items-center">
             <Clock className="mr-2 h-4 w-4 text-gray-400" />
             Workflow Runs (Last 7 Days)
-          </div>
+          </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyRuns}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tickFormat={(date) => {
-                  const d = new Date(date);
+                <XAxis dataKey="date" tickFormatter={(value: string) => {
+                  const d = new Date(value);
                   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
                 }} />
                 <YAxis />
@@ -270,20 +272,17 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-gray-500 mb-4 flex items-center">
             <PieChart className="mr-2 h-4 w-4 text-gray-400" />
             Trigger Type Distribution
-          </div>
+          </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPieChart>
+                <Pie data={triggerData} dataKey="value" nameKey="name" outerRadius={80} label>
+                  {triggerData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
                 <Tooltip formatter={(value, name) => `${name}: ${value}`} />
                 <Legend />
-                {[
-                  { name: 'Manual', value: stats.manual, fill: '#3b82f6' },
-                  { name: 'Schedule', value: stats.schedule, fill: '#10b981' },
-                  { name: 'Event', value: stats.event, fill: '#f59e0b' },
-                  { name: 'Webhook', value: stats.webhook, fill: '#ef4444' }
-                ].filter(item => item.value > 0).map((entry, index) => (
-                  <Cell key={`cell-${index}}` value={entry.value} fill={entry.fill} />
-                ))}
               </RechartsPieChart>
             </ResponsiveContainer>
           </div>
@@ -295,7 +294,7 @@ export default function DashboardPage() {
         <h3 className="text-sm font-medium text-gray-500 mb-4 flex items-center">
           <Activity className="mr-2 h-4 w-4 text-gray-400" />
           Recent Activity
-        </div>
+        </h3>
         {runs.slice(0, 5).map((run) => (
           <div key={run._id} className="flex justify-between items-start p-3 border-t border-gray-100 first:border-t-0">
             <div className="flex-1 min-w-0">
