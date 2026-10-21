@@ -23,6 +23,12 @@ export interface IWorkflowRun {
   startedAt?: Date;
   finishedAt?: Date;
   /**
+   * Touched as the engine walks each node, so stall recovery can tell a live
+   * run from one whose worker died (see `jobs/retention.ts`). Null until the
+   * run first starts executing.
+   */
+  heartbeatAt?: Date | null;
+  /**
    * Server-only snapshot of node outputs, persisted when the run pauses in
    * `waiting` (action.delay) so the resume pass can restore context. Never
    * returned through the API (Task 11 must strip it from run responses).
@@ -62,6 +68,7 @@ const workflowRunSchema = new Schema<IWorkflowRun>(
     },
     startedAt: { type: Date },
     finishedAt: { type: Date },
+    heartbeatAt: { type: Date, default: null },
     nodeOutputs: { type: Schema.Types.Mixed },
   },
   { timestamps: true }

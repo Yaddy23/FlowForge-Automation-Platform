@@ -253,6 +253,7 @@ export async function executeRun(runId: string): Promise<void> {
 
   run.status = 'running';
   if (!run.startedAt) run.startedAt = new Date();
+  run.heartbeatAt = new Date();
   await run.save();
 
   const logger = createLogger(String(run._id));
@@ -320,6 +321,9 @@ export async function executeRun(runId: string): Promise<void> {
     const nodeId = queue.shift() as string;
     if (visited.has(nodeId)) continue;
     visited.add(nodeId);
+    // Heartbeat per node: stall recovery (jobs/retention.ts) only requeues a
+    // `running` run whose worker stopped reporting progress.
+    await WorkflowRun.updateOne({ _id: run._id }, { $set: { heartbeatAt: new Date() } });
 
     const node = nodesById.get(nodeId);
     if (!node) {

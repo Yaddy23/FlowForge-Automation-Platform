@@ -10,13 +10,14 @@ import { logAudit } from '../services/audit.service';
 import { canManage } from './workflow.controller';
 
 /**
- * Execution history API (Task 11). Run docs carry two server-only fields that
- * must never leave the API: `nodeOutputs` (resume context) and the raw
- * `trigger.payload` (redacted here).
+ * Execution history API (Task 11). Run docs carry server-only fields that must
+ * never leave the API: `nodeOutputs` (resume context), `heartbeatAt` (stall
+ * recovery liveness, Task 19) and the raw `trigger.payload` (redacted here).
  */
 function serializeRun(run: IWorkflowRun & mongoose.Document): Record<string, unknown> {
   const plain = JSON.parse(JSON.stringify(run.toJSON())) as Record<string, unknown>;
   delete plain.nodeOutputs;
+  delete plain.heartbeatAt;
   const trigger = plain.trigger as { type?: unknown; payload?: unknown } | undefined;
   if (trigger) {
     plain.trigger = { ...trigger, payload: redact(trigger.payload) };

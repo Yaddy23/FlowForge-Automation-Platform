@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { startSchedulerService } from './triggers/schedule';
 import { startEventConsumer } from './triggers/event-consumer';
 import { startWebhookConsumer } from './triggers/webhook-consumer';
+import { startRetentionJob } from './jobs/retention';
 import { initializeDefaultSettings } from './services/settings.service';
 
 // Load environment variables
@@ -13,6 +14,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
 let schedulerService: any = null;
 let eventConsumer: any = null;
 let webhookConsumer: any = null;
+let retentionJob: any = null;
 
 async function startServer() {
   try {
@@ -27,6 +29,9 @@ async function startServer() {
 
     // Start the webhook consumer's worker; its HTTP app is mounted in app.ts
     webhookConsumer = await startWebhookConsumer();
+
+    // Daily retention sweep + stalled-run recovery (null without Redis)
+    retentionJob = await startRetentionJob();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -49,6 +54,9 @@ process.on('SIGINT', async () => {
   if (webhookConsumer) {
     await webhookConsumer.stop();
   }
+  if (retentionJob) {
+    await retentionJob.stop();
+  }
   process.exit(0);
 });
 
@@ -62,6 +70,9 @@ process.on('SIGTERM', async () => {
   }
   if (webhookConsumer) {
     await webhookConsumer.stop();
+  }
+  if (retentionJob) {
+    await retentionJob.stop();
   }
   process.exit(0);
 });

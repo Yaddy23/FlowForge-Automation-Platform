@@ -40,7 +40,7 @@
 - [x] **T16.** SSRF-safe HTTP client (blocks loopback/private/metadata), AES-256-GCM encrypted credentials (never returned to frontend), Integrations + Credentials pages.
 - [x] **T17.** In-app notifications + preferences (loop-guarded), user management (super admin), audit log UI, settings (retention, limits).
 - [x] **T18.** Security pass: helmet, CORS, rate limits, body limits, Zod validation on every route.
-- [ ] **T19.** Log retention cleanup job + queue stall recovery.
+- [x] **T19.** Log retention cleanup job + queue stall recovery.
 - [ ] **T20.** Playwright E2E: login → create → activate → run → execution detail; RBAC guards.
 - [ ] **T21.** Production Dockerfiles, `docker-compose.prod.yml`, README, DEPLOYMENT/SECURITY/KNOWN-LIMITATIONS docs.
 - [ ] **T22.** **Yad-IT Help-Desk integration** — see below.
